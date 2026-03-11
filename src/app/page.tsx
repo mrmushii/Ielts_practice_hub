@@ -1,8 +1,11 @@
+import Link from "next/link";
+
 const modules = [
   {
     icon: "🎙️",
     title: "Speaking",
     description: "Real-time voice conversation with an AI examiner. Practice Parts 1, 2 & 3.",
+    href: "/speaking",
     color: "from-indigo-500 to-purple-500",
     tag: "Live Voice",
   },
@@ -10,6 +13,7 @@ const modules = [
     icon: "🎧",
     title: "Listening",
     description: "AI-generated audio scenarios with MCQ, fill-in-the-blank questions.",
+    href: "/listening",
     color: "from-cyan-500 to-blue-500",
     tag: "Multi-Voice",
   },
@@ -17,6 +21,7 @@ const modules = [
     icon: "📖",
     title: "Reading",
     description: "Upload passages or use AI-generated ones. True/False/Not Given and more.",
+    href: "/reading",
     color: "from-emerald-500 to-teal-500",
     tag: "RAG Powered",
   },
@@ -24,6 +29,7 @@ const modules = [
     icon: "✍️",
     title: "Writing",
     description: "Task 1 & 2 with real-time grading on all 4 official IELTS rubrics.",
+    href: "/writing",
     color: "from-orange-500 to-rose-500",
     tag: "Auto-Grade",
   },
@@ -72,9 +78,9 @@ export default function Home() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-20">
-          <button className="px-8 py-3.5 rounded-full bg-accent text-white font-semibold text-base hover:bg-accent-light transition-all duration-300 shadow-lg shadow-accent/25 hover:shadow-accent/40 hover:scale-105 cursor-pointer">
+          <Link href="/speaking" className="px-8 py-3.5 rounded-full bg-accent text-white font-semibold text-base hover:bg-accent-light transition-all duration-300 shadow-lg shadow-accent/25 hover:shadow-accent/40 hover:scale-105">
             Start Practicing
-          </button>
+          </Link>
           <button className="px-8 py-3.5 rounded-full bg-surface border border-border text-foreground font-medium text-base hover:bg-surface-hover transition-all duration-300 cursor-pointer">
             View on GitHub
           </button>
@@ -88,7 +94,7 @@ export default function Home() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {modules.map((mod) => (
-            <div key={mod.title} className="glass-card p-6 flex flex-col gap-4 cursor-pointer group">
+            <Link key={mod.title} href={mod.href} className="glass-card p-6 flex flex-col gap-4 cursor-pointer group no-underline text-foreground">
               <div className="flex items-center justify-between">
                 <span className="text-3xl">{mod.icon}</span>
                 <span
@@ -99,7 +105,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-semibold">{mod.title}</h3>
               <p className="text-sm text-text-muted leading-relaxed">{mod.description}</p>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
