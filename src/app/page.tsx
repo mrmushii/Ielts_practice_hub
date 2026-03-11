@@ -39,8 +39,8 @@ export default function Home() {
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Background glow */}
-      <div className="hero-glow" style={{ top: "-200px", left: "50%", transform: "translateX(-50%)" }} />
-      <div className="hero-glow" style={{ bottom: "-300px", right: "-100px", opacity: 0.5 }} />
+      <div className="hero-glow absolute left-1/2 -translate-x-1/2 -top-[200px]" />
+      <div className="hero-glow absolute -right-[100px] -bottom-[300px] opacity-50" />
 
       {/* Navbar */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
