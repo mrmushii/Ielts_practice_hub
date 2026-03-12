@@ -9,6 +9,7 @@ const API_BASE = "http://localhost:8000/api/writing";
 type Prompt = {
   id: string;
   text: string;
+  image_url?: string;
 };
 
 type Feedback = {
@@ -182,6 +183,16 @@ export default function WritingPage() {
             <p className="text-text-muted leading-relaxed text-sm">
               {selectedPrompt ? selectedPrompt.text : "Loading..."}
             </p>
+            {selectedPrompt?.image_url && (
+              <div className="mt-4 rounded-xl overflow-hidden border border-border">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img 
+                  src={selectedPrompt.image_url} 
+                  alt="Task 1 Chart" 
+                  className="w-full h-auto object-contain bg-white"
+                />
+              </div>
+            )}
           </div>
 
           {!feedback && (
