@@ -88,14 +88,57 @@ export default function TutorPage() {
     }
   };
 
-  const toggleMic = () => {
-    setIsListening(!isListening);
-    if (!isListening) {
-      setTimeout(() => {
-         setIsListening(false);
-         setMessages(prev => [...prev, { role: "user", content: "(🎙️ Voice Note Recorded)" }]);
-         setMessages(prev => [...prev, { role: "tutor", content: "I heard your voice note. My audio transcription modules are running in simulated mode, processing your request..." }]);
-      }, 3000);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const toggleMic = async () => {
+    if (isListening) {
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.webm');
+
+        try {
+          const res = await fetch('/api/tutor/transcribe', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await res.json();
+          if (data.text) {
+            setInput(prev => prev ? `${prev} ${data.text}` : data.text);
+          }
+        } catch (error) {
+          console.error("Transcription error:", error);
+        }
+
+        // Stop all tracks to release mic
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsListening(true);
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      alert("Please allow microphone access to use voice input.");
     }
   };
 
