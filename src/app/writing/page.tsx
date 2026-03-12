@@ -200,7 +200,8 @@ export default function WritingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMsg,
-          essay_context: essayText.trim() ? essayText : null
+          essay_context: essayText.trim() ? essayText : null,
+          history: chatMessages
         })
       });
       const data = await res.json();

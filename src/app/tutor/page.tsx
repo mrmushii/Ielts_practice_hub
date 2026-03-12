@@ -36,7 +36,10 @@ export default function TutorPage() {
       const res = await fetch("http://localhost:8000/api/tutor/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage })
+        body: JSON.stringify({ 
+          message: userMessage,
+          history: messages 
+        })
       });
 
       if (!res.ok) throw new Error("API Error");
