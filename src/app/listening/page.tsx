@@ -205,16 +205,17 @@ export default function ListeningPage() {
                 <div className="flex items-center gap-4 w-full justify-center">
                   <button
                     onClick={() => playAudioTimeline(0)}
-                    className="p-3 rounded-full bg-surface-hover hover:bg-surface border border-border text-foreground transition-colors cursor-pointer"
-                    title="Restart"
+                    className="w-12 h-12 flex items-center justify-center rounded-full bg-surface hover:bg-surface-hover border border-border transition-colors group cursor-pointer" title="Restart audio" aria-label="Restart audio"
                   >
-                    <SkipBack className="w-6 h-6" />
+                    <SkipBack className="w-5 h-5 text-foreground group-hover:text-accent transition-colors" />
                   </button>
                   
                   {isPlaying ? (
                     <button
                       onClick={pauseAudio}
                       className="w-16 h-16 rounded-full bg-accent hover:bg-accent-light text-white shadow-lg shadow-accent/30 flex items-center justify-center transition-transform hover:scale-105 cursor-pointer"
+                      title="Pause audio"
+                      aria-label="Pause audio"
                     >
                       <Pause className="w-8 h-8" />
                     </button>
@@ -222,6 +223,8 @@ export default function ListeningPage() {
                     <button
                       onClick={resumeAudio}
                       className="w-16 h-16 rounded-full bg-accent hover:bg-accent-light text-white shadow-lg shadow-accent/30 flex items-center justify-center transition-transform hover:scale-105 cursor-pointer"
+                      title="Play audio"
+                      aria-label="Play audio"
                     >
                       <Play className="w-8 h-8 ml-1" />
                     </button>
