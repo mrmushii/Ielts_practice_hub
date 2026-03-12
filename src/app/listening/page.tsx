@@ -2,9 +2,9 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
+import { Headphones, SkipBack, Play, Pause } from "lucide-react";
 
 const API_BASE = "http://localhost:8000/api/listening";
-const AUDIO_BASE = "http://localhost:8000/api/core/audio";
 
 type Question = {
   id: string;
@@ -145,7 +145,7 @@ export default function ListeningPage() {
           <span className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-sm font-medium border border-cyan-500/20 shadow-[0_0_10px_rgba(6,182,212,0.1)]">
             Generative Audio
           </span>
-          <span className="text-2xl">🎧</span>
+          <Headphones className="w-6 h-6 text-foreground" />
         </div>
       </header>
 
@@ -190,8 +190,8 @@ export default function ListeningPage() {
             {/* Left: Audio Player & Setup */}
             <div className="space-y-6">
               <div className="glass-card p-8 flex flex-col items-center text-center">
-                <div className="w-24 h-24 rounded-full bg-accent/10 border-4 border-accent/20 flex items-center justify-center mb-6 relative">
-                  <span className="text-4xl">🎧</span>
+                <div className="w-24 h-24 rounded-full bg-accent/10 border-4 border-accent/20 flex items-center justify-center mb-6 relative text-accent">
+                  <Headphones className="w-10 h-10" />
                   {isPlaying && (
                     <div className="absolute inset-0 rounded-full border-2 border-accent animate-ping" />
                   )}
@@ -208,22 +208,22 @@ export default function ListeningPage() {
                     className="p-3 rounded-full bg-surface-hover hover:bg-surface border border-border text-foreground transition-colors cursor-pointer"
                     title="Restart"
                   >
-                    ⏮️
+                    <SkipBack className="w-6 h-6" />
                   </button>
                   
                   {isPlaying ? (
                     <button
                       onClick={pauseAudio}
-                      className="w-16 h-16 rounded-full bg-accent hover:bg-accent-light text-white shadow-lg shadow-accent/30 flex items-center justify-center text-2xl transition-transform hover:scale-105 cursor-pointer"
+                      className="w-16 h-16 rounded-full bg-accent hover:bg-accent-light text-white shadow-lg shadow-accent/30 flex items-center justify-center transition-transform hover:scale-105 cursor-pointer"
                     >
-                      ⏸️
+                      <Pause className="w-8 h-8" />
                     </button>
                    ) : (
                     <button
                       onClick={resumeAudio}
-                      className="w-16 h-16 rounded-full bg-accent hover:bg-accent-light text-white shadow-lg shadow-accent/30 flex items-center justify-center text-2xl pl-1 transition-transform hover:scale-105 cursor-pointer"
+                      className="w-16 h-16 rounded-full bg-accent hover:bg-accent-light text-white shadow-lg shadow-accent/30 flex items-center justify-center transition-transform hover:scale-105 cursor-pointer"
                     >
-                      ▶️
+                      <Play className="w-8 h-8 ml-1" />
                     </button>
                    )}
                 </div>

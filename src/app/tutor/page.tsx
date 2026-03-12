@@ -91,13 +91,14 @@ export default function TutorPage() {
             }
           }}
           placeholder="Ask me anything about IELTS..."
-          className="w-full bg-surface border border-border rounded-xl px-6 py-4 pr-16 resize-none focus:outline-none focus:ring-2 ring-accent/50 text-foreground text-sm"
+          className="w-full bg-surface border border-border rounded-xl px-6 py-4 pr-16 resize-none focus:outline-none focus:ring-2 ring-accent/50 text-foreground text-sm min-h-[60px] max-h-[200px]"
           rows={1}
-          style={{ minHeight: "60px", maxHeight: "200px" }}
         />
         <button 
           onClick={sendMessage}
           disabled={!input.trim() || isLoading}
+          title="Send message"
+          aria-label="Send message"
           className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-accent text-white rounded-lg hover:bg-accent-light disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           <Send className="w-5 h-5" />

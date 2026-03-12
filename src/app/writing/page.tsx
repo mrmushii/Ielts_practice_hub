@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { PenTool, Upload, Loader2 } from "lucide-react";
 
 const API_BASE = "http://localhost:8000/api/writing";
 
@@ -27,7 +28,9 @@ export default function WritingPage() {
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const [essayText, setEssayText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Timer state
   const [timeLeft, setTimeLeft] = useState(40 * 60); // 40 mins for Task 2
@@ -70,6 +73,38 @@ export default function WritingPage() {
   };
 
   const wordCount = essayText.trim().split(/\s+/).filter((w) => w.length > 0).length;
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const base64String = (reader.result as string).split(",")[1];
+        
+        const res = await fetch(`${API_BASE}/upload_image`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image_base64: base64String }),
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          setEssayText((prev) => prev ? prev + "\n\n" + data.extracted_text : data.extracted_text);
+        }
+      };
+    } catch (err) {
+      console.error("OCR Failed:", err);
+    } finally {
+      setIsUploading(false);
+      // Reset input so the same file can be selected again
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleSubmit = async () => {
     if (!essayText.trim() || !selectedPrompt) return;
@@ -122,7 +157,7 @@ export default function WritingPage() {
               Task 2
             </button>
           </div>
-          <span className="text-2xl">✍️</span>
+          <PenTool className="w-6 h-6 text-foreground" />
         </div>
       </header>
 
@@ -234,7 +269,29 @@ export default function WritingPage() {
             className="flex-1 w-full glass-card p-6 resize-none focus:outline-none focus:ring-2 focus:ring-accent/50 text-foreground text-base leading-relaxed"
           />
 
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-between items-center pt-2">
+            <div>
+              <input 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                ref={fileInputRef} 
+                onChange={handleFileUpload} 
+                title="Upload handwritten essay image"
+                aria-label="Upload handwritten essay image"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                title="Upload image for OCR"
+                aria-label="Upload image for OCR"
+                className="px-6 py-3 rounded-full bg-surface border border-border text-foreground font-semibold hover:bg-surface-hover transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2"
+              >
+                {isUploading ? <Loader2 className="w-5 h-5 animate-spin text-text-muted" /> : <Upload className="w-5 h-5 text-text-muted" />}
+                <span className="text-sm">Upload Handwritten Essay (OCR)</span>
+              </button>
+            </div>
+            
             <button
               onClick={handleSubmit}
               disabled={isSubmitting || wordCount === 0}

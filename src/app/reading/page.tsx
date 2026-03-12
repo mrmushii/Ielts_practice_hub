@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { BookOpen } from "lucide-react";
 
 const API_BASE = "http://localhost:8000/api/reading";
 
@@ -103,7 +104,7 @@ export default function ReadingPage() {
           <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-sm font-medium border border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.1)]">
             RAG Powered
           </span>
-          <span className="text-2xl">📖</span>
+          <BookOpen className="w-6 h-6 text-foreground" />
         </div>
       </header>
 

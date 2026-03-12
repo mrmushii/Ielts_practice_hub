@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
+import { Mic } from "lucide-react";
 
 const API_BASE = "http://localhost:8000/api/speaking";
 
@@ -194,7 +195,7 @@ export default function SpeakingPage() {
   // Send audio response
   const sendAudioResponse = async (blob: Blob) => {
     setIsLoading(true);
-    setMessages((prev) => [...prev, { role: "candidate", content: "🎙️ (voice response — transcribing...)" }]);
+    setMessages((prev) => [...prev, { role: "candidate", content: "(voice response — transcribing...)" }]);
 
     try {
       const formData = new FormData();
@@ -212,7 +213,7 @@ export default function SpeakingPage() {
         const updated = [...prev];
         const lastCandidate = updated.findLastIndex((m) => m.role === "candidate");
         if (lastCandidate >= 0 && updated[lastCandidate].content.includes("transcribing")) {
-          updated[lastCandidate] = { role: "candidate", content: "🎙️ (voice response)" };
+          updated[lastCandidate] = { role: "candidate", content: "(voice response)" };
         }
         return [...updated, { role: "examiner", content: data.examiner_text }];
       });
@@ -279,7 +280,7 @@ export default function SpeakingPage() {
               {partLabels[currentPart]}
             </span>
           )}
-          <span className="text-2xl">🎙️</span>
+          <Mic className="w-6 h-6 text-foreground" />
         </div>
       </header>
 
@@ -287,7 +288,11 @@ export default function SpeakingPage() {
       {testState === "idle" && (
         <main className="flex-1 flex items-center justify-center px-6">
           <div className="glass-card p-10 max-w-lg w-full text-center space-y-6">
-            <div className="text-5xl mb-2">🎙️</div>
+            <div className="flex justify-center mb-6">
+              <div className="p-4 rounded-3xl bg-accent/10 border border-accent/20">
+                <Mic className="w-12 h-12 text-accent" />
+              </div>
+            </div>
             <h1 className="text-3xl font-bold">IELTS Speaking Test</h1>
             <p className="text-text-muted leading-relaxed">
               Practice all three parts of the IELTS Speaking test with an AI examiner.
@@ -422,8 +427,8 @@ export default function SpeakingPage() {
                   </svg>
                 </button>
               </div>
-              <p className="text-xs text-text-muted mt-2 text-center">
-                {isRecording ? "🔴 Recording... Stop speaking for 2 seconds to auto-send, or click to send now" : "Press the mic to record or type your answer"}
+              <p className="text-xs text-text-muted mt-2 text-center flex items-center justify-center gap-2">
+                {isRecording ? <><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Recording... Stop speaking for 2 seconds to auto-send, or click to send now</> : "Press the mic to record or type your answer"}
               </p>
             </div>
           )}
