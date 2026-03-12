@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { Mic } from "lucide-react";
+import { Mic, Clock } from "lucide-react";
 
 const API_BASE = "http://localhost:8000/api/speaking";
 
@@ -24,6 +24,7 @@ export default function SpeakingPage() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState("british_female");
   const [textInput, setTextInput] = useState("");
+  const [timeLeft, setTimeLeft] = useState(840); // 14 mins
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -41,6 +42,19 @@ export default function SpeakingPage() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Timer
+  useEffect(() => {
+    if (testState !== "testing" || timeLeft <= 0) return;
+    const interval = setInterval(() => setTimeLeft((t) => t - 1), 1000);
+    return () => clearInterval(interval);
+  }, [testState, timeLeft]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
 
   // Play examiner audio
   const playAudio = useCallback((audioUrl: string) => {
@@ -259,6 +273,7 @@ export default function SpeakingPage() {
     setCurrentPart(1);
     setFeedback("");
     setShowFeedback(false);
+    setTimeLeft(840);
   };
 
   const partLabels: Record<number, string> = {
@@ -274,13 +289,21 @@ export default function SpeakingPage() {
         <Link href="/" className="text-lg font-bold gradient-text">
           IELTS Prep
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {testState === "testing" && (
-            <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-sm font-medium border border-indigo-500/20">
-              {partLabels[currentPart]}
-            </span>
+            <>
+              <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-background border border-border">
+                <Clock className={`w-4 h-4 ${timeLeft < 180 ? 'text-rose-500 animate-pulse' : 'text-text-muted'}`} />
+                <span className={`font-mono font-medium ${timeLeft < 180 ? 'text-rose-500' : 'text-foreground'}`}>
+                  {formatTime(timeLeft)}
+                </span>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-sm font-medium border border-indigo-500/20">
+                {partLabels[currentPart]}
+              </span>
+            </>
           )}
-          <Mic className="w-6 h-6 text-foreground" />
+          <Mic className="w-6 h-6 text-foreground hidden sm:block" />
         </div>
       </header>
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { PenTool, Upload, Loader2 } from "lucide-react";
+import { PenTool, Upload, Loader2, Clock } from "lucide-react";
 
 const API_BASE = "http://localhost:8000/api/writing";
 
@@ -62,7 +62,7 @@ export default function WritingPage() {
     setTaskType(type);
     setSelectedPrompt(type === 1 ? prompts.task1[0] : prompts.task2[0]);
     setTimeLeft(type === 1 ? 20 * 60 : 40 * 60);
-    setTimerActive(false);
+    setTimerActive(true);
     setEssayText("");
     setFeedback(null);
   };
@@ -139,8 +139,22 @@ export default function WritingPage() {
           IELTS Prep
         </Link>
         <div className="flex items-center gap-4">
+          
+          {/* Universal Exam Timer */}
+          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-background border border-border group relative">
+            <Clock className={`w-4 h-4 ${timeLeft < 300 ? 'text-rose-500 animate-pulse' : 'text-text-muted'}`} />
+            <span className={`font-mono font-medium ${timeLeft < 300 ? 'text-rose-500' : 'text-foreground'}`}>
+               {formatTime(timeLeft)}
+            </span>
+            <button 
+              onClick={() => setTimerActive(!timerActive)} 
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              title={timerActive ? "Pause Timer" : "Start Timer"}
+            />
+          </div>
+
           {/* Task selector */}
-          <div className="flex bg-surface-hover rounded-full p-1 border border-border">
+          <div className="hidden sm:flex bg-surface-hover rounded-full p-1 border border-border">
             <button
               onClick={() => handleTaskSwitch(1)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer ${
@@ -158,7 +172,7 @@ export default function WritingPage() {
               Task 2
             </button>
           </div>
-          <PenTool className="w-6 h-6 text-foreground" />
+          <PenTool className="w-6 h-6 text-foreground hidden md:block" />
         </div>
       </header>
 
@@ -253,16 +267,6 @@ export default function WritingPage() {
         {/* Right column: Editor */}
         <div className="w-full lg:w-2/3 flex flex-col gap-4">
           <div className="flex justify-between items-center px-2">
-            <div className="flex items-center gap-4">
-              <span className={`font-mono text-xl ${timeLeft < 300 ? "text-rose-400" : "text-foreground"}`}>
-                ⏱ {formatTime(timeLeft)}
-              </span>
-              {!timerActive && timeLeft > 0 ? (
-                <button onClick={() => setTimerActive(true)} className="text-sm text-emerald-400 hover:text-emerald-300 cursor-pointer">Start Timer</button>
-              ) : timerActive ? (
-                <button onClick={() => setTimerActive(false)} className="text-sm text-amber-400 hover:text-amber-300 cursor-pointer">Pause Timer</button>
-              ) : null}
-            </div>
             <div className={`text-sm font-medium ${
               (taskType === 1 && wordCount < 150) || (taskType === 2 && wordCount < 250)
                 ? "text-amber-400"

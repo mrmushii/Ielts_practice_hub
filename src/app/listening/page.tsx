@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Headphones, SkipBack, Play, Pause } from "lucide-react";
+import { Headphones, SkipBack, Play, Pause, Clock } from "lucide-react";
 
 const API_BASE = "http://localhost:8000/api/listening";
 
@@ -36,6 +36,9 @@ export default function ListeningPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Timer
+  const [timeLeft, setTimeLeft] = useState(2400); // 40 minutes
+
   // User answers
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showResults, setShowResults] = useState(false);
@@ -56,11 +59,24 @@ export default function ListeningPage() {
       });
       const data = await res.json();
       setTestData(data);
+      setTimeLeft(2400);
     } catch (err) {
       console.error("Failed to generate test:", err);
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  useEffect(() => {
+    if (!testData || showResults || timeLeft <= 0) return;
+    const interval = setInterval(() => setTimeLeft((t) => t - 1), 1000);
+    return () => clearInterval(interval);
+  }, [testData, showResults, timeLeft]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
   };
 
   const playAudioTimeline = (startIndex: number) => {
@@ -141,11 +157,22 @@ export default function ListeningPage() {
         <Link href="/" className="text-lg font-bold gradient-text">
           IELTS Prep
         </Link>
-        <div className="flex items-center gap-3">
-          <span className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-sm font-medium border border-cyan-500/20 shadow-[0_0_10px_rgba(6,182,212,0.1)]">
+        <div className="flex items-center gap-4">
+          
+          {/* Universal Exam Timer */}
+          {testData && (
+            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-background border border-border">
+              <Clock className={`w-4 h-4 ${timeLeft < 300 ? 'text-rose-500 animate-pulse' : 'text-text-muted'}`} />
+              <span className={`font-mono font-medium ${timeLeft < 300 ? 'text-rose-500' : 'text-foreground'}`}>
+                {formatTime(timeLeft)}
+              </span>
+            </div>
+          )}
+
+          <span className="hidden md:inline-flex px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-sm font-medium border border-cyan-500/20 shadow-[0_0_10px_rgba(6,182,212,0.1)]">
             Generative Audio
           </span>
-          <Headphones className="w-6 h-6 text-foreground" />
+          <Headphones className="w-6 h-6 text-foreground hidden sm:block" />
         </div>
       </header>
 

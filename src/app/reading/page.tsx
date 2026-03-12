@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Clock, RefreshCw } from "lucide-react";
 
 const API_BASE = "http://localhost:8000/api/reading";
 
@@ -26,7 +26,6 @@ type Feedback = {
 };
 
 export default function ReadingPage() {
-  const [passages, setPassages] = useState<Passage[]>([]);
   const [selectedPassage, setSelectedPassage] = useState<Passage | null>(null);
   
   // Track user answers keyed by question ID
@@ -38,15 +37,41 @@ export default function ReadingPage() {
   // Track loading state keyed by question ID
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
 
-  // Fetch passages on mount
-  useEffect(() => {
-    fetch(`${API_BASE}/passages`)
-      .then((res) => res.json())
-      .then((data: Passage[]) => {
-        setPassages(data);
-        if (data.length > 0) setSelectedPassage(data[0]);
-      });
+  const [timeLeft, setTimeLeft] = useState(1200); // 20 minutes in seconds
+
+  // Fetch new passage
+  const fetchNewPassage = useCallback(async () => {
+    setSelectedPassage(null);
+    setAnswers({});
+    setFeedbacks({});
+    try {
+      const res = await fetch(`${API_BASE}/generate`);
+      if (res.ok) {
+        const data: Passage = await res.json();
+        setSelectedPassage(data);
+        setTimeLeft(1200); // reset timer
+      }
+    } catch (err) {
+      console.error("Failed to generate test:", err);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchNewPassage();
+  }, [fetchNewPassage]);
+
+  // Timer effect
+  useEffect(() => {
+    if (!selectedPassage || timeLeft <= 0) return;
+    const interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+    return () => clearInterval(interval);
+  }, [selectedPassage, timeLeft]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleAnswerChange = (questionId: string, value: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
@@ -81,8 +106,9 @@ export default function ReadingPage() {
 
   if (!selectedPassage) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <span className="w-8 h-8 border-4 border-accent/30 border-t-accent rounded-full animate-spin" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background space-y-4">
+        <span className="w-12 h-12 border-4 border-accent/20 border-t-accent rounded-full animate-spin" />
+        <p className="text-text-muted animate-pulse font-medium tracking-wide">AI is writing your personalized reading test...</p>
       </div>
     );
   }
@@ -100,11 +126,19 @@ export default function ReadingPage() {
         <Link href="/" className="text-lg font-bold gradient-text">
           IELTS Prep
         </Link>
-        <div className="flex items-center gap-3">
-          <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-sm font-medium border border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.1)]">
-            RAG Powered
+        <div className="flex items-center gap-4">
+          {/* Timer element */}
+          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface border border-border">
+            <Clock className={`w-4 h-4 ${timeLeft < 300 ? 'text-rose-500 animate-pulse' : 'text-text-muted'}`} />
+            <span className={`font-mono font-medium ${timeLeft < 300 ? 'text-rose-500' : 'text-foreground'}`}>
+              {formatTime(timeLeft)}
+            </span>
+          </div>
+
+          <span className="hidden md:inline-flex px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-sm font-medium border border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.1)]">
+            AI Generated Exam
           </span>
-          <BookOpen className="w-6 h-6 text-foreground" />
+          <BookOpen className="w-6 h-6 text-foreground hidden sm:block" />
         </div>
       </header>
 
@@ -192,6 +226,20 @@ export default function ReadingPage() {
                 </div>
               );
             })}
+
+            {/* Dynamic Next Generator */}
+            <div className="pt-6 border-t border-border flex flex-col items-center gap-4">
+              <p className="text-sm text-text-muted text-center">
+                Finished practicing this academic passage?
+              </p>
+              <button
+                onClick={fetchNewPassage}
+                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-surface border border-border text-foreground font-medium hover:bg-surface-hover hover:border-accent/50 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm group"
+              >
+                <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                Generate New Passage
+              </button>
+            </div>
           </div>
         </div>
 
