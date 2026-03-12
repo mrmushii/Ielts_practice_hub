@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { Mic, Headphones, BookOpen, PenTool, MessageSquare } from "lucide-react";
 
 const modules = [
   {
-    icon: "🎙️",
+    icon: <Mic className="w-8 h-8" />,
     title: "Speaking",
     description: "Real-time voice conversation with an AI examiner. Practice Parts 1, 2 & 3.",
     href: "/speaking",
@@ -10,7 +11,7 @@ const modules = [
     tag: "Live Voice",
   },
   {
-    icon: "🎧",
+    icon: <Headphones className="w-8 h-8" />,
     title: "Listening",
     description: "AI-generated audio scenarios with MCQ, fill-in-the-blank questions.",
     href: "/listening",
@@ -18,7 +19,7 @@ const modules = [
     tag: "Multi-Voice",
   },
   {
-    icon: "📖",
+    icon: <BookOpen className="w-8 h-8" />,
     title: "Reading",
     description: "Upload passages or use AI-generated ones. True/False/Not Given and more.",
     href: "/reading",
@@ -26,12 +27,20 @@ const modules = [
     tag: "RAG Powered",
   },
   {
-    icon: "✍️",
+    icon: <PenTool className="w-8 h-8" />,
     title: "Writing",
     description: "Task 1 & 2 with real-time grading on all 4 official IELTS rubrics.",
     href: "/writing",
     color: "from-orange-500 to-rose-500",
     tag: "Auto-Grade",
+  },
+  {
+    icon: <MessageSquare className="w-8 h-8" />,
+    title: "AI Tutor",
+    description: "Multi-agent chatbot with Search, Grounding, and RAG built-in.",
+    href: "/tutor",
+    color: "from-emerald-400 to-cyan-500",
+    tag: "Tool Agent",
   },
 ];
 

@@ -29,6 +29,13 @@ export default function SpeakingPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Silence Detection Refs
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const isSpeakingRef = useRef<boolean>(false);
+
   // Auto-scroll chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -104,11 +111,66 @@ export default function SpeakingPage() {
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
+      // -- Silence Detection Setup --
+      const audioContext = new AudioContext();
+      audioContextRef.current = audioContext;
+      const analyser = audioContext.createAnalyser();
+      analyserRef.current = analyser;
+      analyser.minDecibels = -60;
+      analyser.smoothingTimeConstant = 0.2;
+      
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+      
+      isSpeakingRef.current = false;
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      
+      const detectSilence = () => {
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += dataArray[i];
+        }
+        const average = sum / dataArray.length;
+        
+        // Volume threshold
+        if (average > 15) {
+          isSpeakingRef.current = true;
+          // Clear silence timer because they are talking
+          if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = null;
+          }
+        } else {
+          // If they were speaking and are now quiet, start a countdown of 2 seconds
+          if (isSpeakingRef.current && !silenceTimerRef.current) {
+            silenceTimerRef.current = setTimeout(() => {
+              if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+                mediaRecorderRef.current.stop();
+                setIsRecording(false);
+              }
+            }, 2000); // Wait 2 seconds of silence before auto-sending
+          }
+        }
+        
+        animationFrameRef.current = requestAnimationFrame(detectSilence);
+      };
+      
+      detectSilence();
+      // ----------------------------
+
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
       mediaRecorder.onstop = async () => {
+        // Cleanup detection
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        if (audioContextRef.current?.state !== "closed") {
+          audioContextRef.current?.close();
+        }
+
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
         stream.getTracks().forEach((t) => t.stop());
         await sendAudioResponse(blob);
@@ -121,9 +183,9 @@ export default function SpeakingPage() {
     }
   };
 
-  // Stop recording
+  // Stop recording manually
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
@@ -361,7 +423,7 @@ export default function SpeakingPage() {
                 </button>
               </div>
               <p className="text-xs text-text-muted mt-2 text-center">
-                {isRecording ? "🔴 Recording... Click the button to stop" : "Press the mic to record or type your answer"}
+                {isRecording ? "🔴 Recording... Stop speaking for 2 seconds to auto-send, or click to send now" : "Press the mic to record or type your answer"}
               </p>
             </div>
           )}
