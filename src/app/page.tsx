@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mic, Headphones, BookOpen, PenTool, MessageSquare } from "lucide-react";
+import { Mic, Headphones, BookOpen, PenTool } from "lucide-react";
 
 const modules = [
   {
@@ -34,22 +34,14 @@ const modules = [
     color: "from-orange-500 to-rose-500",
     tag: "Auto-Grade",
   },
-  {
-    icon: <MessageSquare className="w-8 h-8" />,
-    title: "AI Tutor",
-    description: "Multi-agent chatbot with Search, Grounding, and RAG built-in.",
-    href: "/tutor",
-    color: "from-emerald-400 to-cyan-500",
-    tag: "Tool Agent",
-  },
 ];
 
 export default function Home() {
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Background glow */}
-      <div className="hero-glow absolute left-1/2 -translate-x-1/2 -top-[200px]" />
-      <div className="hero-glow absolute -right-[100px] -bottom-[300px] opacity-50" />
+      <div className="hero-glow absolute left-1/2 -translate-x-1/2 -top-50" />
+      <div className="hero-glow absolute -right-25 -bottom-75 opacity-50" />
 
       {/* Navbar */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
@@ -107,7 +99,7 @@ export default function Home() {
               <div className="flex items-center justify-between">
                 <span className="text-3xl">{mod.icon}</span>
                 <span
-                  className={`text-xs font-medium px-2.5 py-1 rounded-full bg-gradient-to-r ${mod.color} text-white opacity-80 group-hover:opacity-100 transition-opacity`}
+                  className={`text-xs font-medium px-2.5 py-1 rounded-full bg-linear-to-r ${mod.color} text-white opacity-80 group-hover:opacity-100 transition-opacity`}
                 >
                   {mod.tag}
                 </span>

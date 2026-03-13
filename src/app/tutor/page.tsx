@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, Send, Sparkles, Loader2, Paperclip, Mic, Layout, X } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { MessageSquare, Send, Sparkles, Loader2, Paperclip, Mic, Layout, X, ArrowLeft } from "lucide-react";
 import TutorRichText from "@/components/TutorRichText";
 
 export default function TutorPage() {
+  const router = useRouter();
   const [sessionId, setSessionId] = useState("");
   const [messages, setMessages] = useState<{ role: "user" | "tutor", content: string }[]>([
     {
@@ -20,6 +23,14 @@ export default function TutorPage() {
   
   const chatEndRef = useRef<HTMLDivElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push("/");
+  };
 
   useEffect(() => {
     const storageKey = "tutor_session_id";
@@ -161,9 +172,43 @@ export default function TutorPage() {
   };
 
   return (
-    <div className="flex pt-16 h-screen bg-background overflow-hidden">
+    <div className="min-h-screen bg-background overflow-hidden relative">
+      <div className="hero-glow absolute left-1/2 -translate-x-1/2 -top-55" />
+      <div className="hero-glow absolute -right-45 -bottom-70 opacity-40" />
+
+      <header className="relative z-20 border-b border-border bg-surface/70 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleBack}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full border border-border bg-surface text-text-muted hover:text-foreground hover:bg-surface-hover transition-colors cursor-pointer"
+              title="Go back"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+            <div className="p-2 rounded-xl bg-accent/15 border border-accent/30 text-accent-light">
+              <MessageSquare className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold">AI Tutor Workspace</h1>
+              <p className="text-xs text-text-muted">Search-grounded coaching with OCR, mic input, and document RAG</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/" className="px-4 py-2 rounded-full bg-surface border border-border text-sm text-foreground hover:bg-surface-hover transition-colors">
+              Home
+            </Link>
+            <Link href="/writing" className="px-4 py-2 rounded-full bg-accent/15 border border-accent/30 text-sm text-accent-light hover:bg-accent/25 transition-colors">
+              Writing
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <div className="relative z-10 flex h-[calc(100vh-74px)]">
       {/* Left Chat Pane */}
-      <div className={`flex flex-col border-r border-border transition-all duration-300 ease-in-out ${activeCanvasContent ? 'w-[45%]' : 'w-full max-w-4xl mx-auto'}`}>
+      <div className={`flex flex-col border-r border-border transition-all duration-300 ease-in-out animate-slide-up-fade ${activeCanvasContent ? 'w-[45%]' : 'w-full max-w-4xl mx-auto'}`}>
         
         {/* Header */}
         <div className="p-6 border-b border-border bg-surface/50 backdrop-blur shrink-0">
@@ -305,7 +350,7 @@ export default function TutorPage() {
       </div>
 
       {/* Right Canvas Pane */}
-      <div className={`transition-all duration-300 ease-in-out bg-surface/30 flex flex-col border-l border-border relative ${activeCanvasContent ? 'w-[55%]' : 'w-0'}`}>
+      <div className={`transition-all duration-300 ease-in-out bg-surface/30 flex flex-col border-l border-border relative ${activeCanvasContent ? 'w-[55%] animate-slide-right-fade' : 'w-0'}`}>
         <div className="absolute inset-0 flex flex-col overflow-hidden min-w-75">
            {/* Canvas Header */}
            <div className="h-18.25 shrink-0 border-b border-border bg-surface/50 backdrop-blur flex items-center justify-between px-6">
@@ -331,6 +376,7 @@ export default function TutorPage() {
              </div>
            </div>
         </div>
+      </div>
       </div>
     </div>
   );
