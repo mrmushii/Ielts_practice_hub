@@ -25,6 +25,7 @@ export default function SpeakingPage() {
   const [selectedVoice, setSelectedVoice] = useState("british_female");
   const [textInput, setTextInput] = useState("");
   const [timeLeft, setTimeLeft] = useState(840); // 14 mins
+  const [isAutoMode, setIsAutoMode] = useState(true); // Default to auto-mode
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -64,8 +65,15 @@ export default function SpeakingPage() {
     }
     const audio = new Audio(`http://localhost:8000${audioUrl}`);
     audioRef.current = audio;
+    
+    audio.onended = () => {
+      if (isAutoMode && testState === "testing") {
+        startRecording();
+      }
+    };
+
     audio.play().catch(() => {});
-  }, []);
+  }, [isAutoMode, testState]);
 
   // Start the test
   const startTest = async () => {
@@ -164,7 +172,7 @@ export default function SpeakingPage() {
                 mediaRecorderRef.current.stop();
                 setIsRecording(false);
               }
-            }, 2000); // Wait 2 seconds of silence before auto-sending
+            }, 1800); // Wait 1.8 seconds of silence before auto-sending
           }
         }
         
@@ -402,7 +410,19 @@ export default function SpeakingPage() {
 
           {/* Input area */}
           {testState === "testing" && (
-            <div className="px-6 py-4 border-t border-border bg-surface/50">
+              <div className="flex items-center justify-between mb-2">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <div 
+                    className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${isAutoMode ? 'bg-accent' : 'bg-surface-hover border border-border'}`}
+                    onClick={() => setIsAutoMode(!isAutoMode)}
+                  >
+                    <div className={`absolute top-1 left-1 w-3 h-3 rounded-full bg-white transition-transform duration-200 ${isAutoMode ? 'translate-x-5' : 'translate-x-0 bg-text-muted'}`} />
+                  </div>
+                  <span className="text-xs font-medium text-text-muted group-hover:text-foreground transition-colors">Continuous Conversation Mode</span>
+                </label>
+                {isRecording && <span className="text-[10px] uppercase tracking-wider text-rose-500 font-bold animate-pulse flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> System Listening...</span>}
+              </div>
+
               <div className="flex items-center gap-3">
                 {/* Record button */}
                 <button
@@ -433,7 +453,7 @@ export default function SpeakingPage() {
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && sendTextResponse()}
-                  placeholder="Type your answer or use the microphone..."
+                  placeholder={isAutoMode ? "System will auto-send when you stop speaking..." : "Type your answer or use the microphone..."}
                   disabled={isLoading || isRecording}
                   className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:border-accent/50 transition-colors disabled:opacity-50"
                 />
@@ -451,9 +471,8 @@ export default function SpeakingPage() {
                 </button>
               </div>
               <p className="text-xs text-text-muted mt-2 text-center flex items-center justify-center gap-2">
-                {isRecording ? <><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Recording... Stop speaking for 2 seconds to auto-send, or click to send now</> : "Press the mic to record or type your answer"}
+                {isRecording ? <><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Recording... Stop speaking for 1.8 seconds to auto-send, or click to send now</> : isAutoMode ? "System will automatically start listening after examiner finishes." : "Press the mic to record or type your answer"}
               </p>
-            </div>
           )}
 
           {/* Complete — Feedback area */}
