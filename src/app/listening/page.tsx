@@ -27,6 +27,19 @@ type TestData = {
   questions: Question[];
 };
 
+const LISTENING_TOPICS = [
+  "A customer discussing a damaged parcel at a courier office",
+  "Two university students planning a climate awareness event",
+  "A tenant calling a landlord about apartment maintenance",
+  "A traveler changing a train booking due to delays",
+  "A parent enrolling a child in a weekend art club",
+  "Two colleagues arranging a professional training workshop",
+  "A student asking about volunteering opportunities at a museum",
+  "A visitor inquiring about a guided nature park tour",
+  "A candidate discussing interview logistics with HR",
+  "A customer comparing internet packages with a service agent",
+];
+
 export default function ListeningPage() {
   const [testData, setTestData] = useState<TestData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -52,10 +65,14 @@ export default function ListeningPage() {
     setAnswers({});
     
     try {
+      const topic = LISTENING_TOPICS[Math.floor(Math.random() * LISTENING_TOPICS.length)];
       const res = await fetch(`${API_BASE}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: "A student inquiring about a gym membership" }),
+        body: JSON.stringify({
+          topic,
+          seed: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+        }),
       });
       const data = await res.json();
       setTestData(data);
@@ -313,7 +330,7 @@ export default function ListeningPage() {
                         {q.type === "mcq" && q.options ? (
                           <div className="space-y-2">
                             {q.options.map((opt, i) => (
-                              <label key={i} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-surface hover:bg-surface-hover cursor-pointer transition-colors has-[:checked]:border-accent has-[:checked]:bg-accent/5">
+                              <label key={i} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-surface hover:bg-surface-hover cursor-pointer transition-colors has-checked:border-accent has-checked:bg-accent/5">
                                 <input
                                   type="radio"
                                   name={`question_${q.id}`}
