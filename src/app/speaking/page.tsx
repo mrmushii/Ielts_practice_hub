@@ -31,13 +31,38 @@ export default function SpeakingPage() {
   const chunksRef = useRef<Blob[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
 
   // Silence Detection Refs
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const isSpeakingRef = useRef<boolean>(false);
+  const hasDetectedSpeechRef = useRef(false);
+  const startRecordingRef = useRef<(() => Promise<void>) | null>(null);
+
+  const cleanupAudioResources = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+
+    if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+      audioContextRef.current.close().catch(() => {});
+    }
+    audioContextRef.current = null;
+    analyserRef.current = null;
+
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    }
+  }, []);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -67,13 +92,18 @@ export default function SpeakingPage() {
     audioRef.current = audio;
     
     audio.onended = () => {
-      if (isAutoMode && testState === "testing") {
-        startRecording();
+      if (isAutoMode && testState === "testing" && !isRecording && !isLoading) {
+        startRecordingRef.current?.();
       }
     };
 
-    audio.play().catch(() => {});
-  }, [isAutoMode, testState]);
+    audio.play().catch(() => {
+      // Fallback for autoplay restrictions: still keep the conversation moving.
+      if (isAutoMode && testState === "testing" && !isRecording && !isLoading) {
+        startRecordingRef.current?.();
+      }
+    });
+  }, [isAutoMode, testState, isRecording, isLoading]);
 
   // Start the test
   const startTest = async () => {
@@ -98,7 +128,7 @@ export default function SpeakingPage() {
   };
 
   // Send text response
-  const sendTextResponse = async () => {
+  const sendTextResponse = useCallback(async () => {
     if (!textInput.trim() || isLoading) return;
     const candidateText = textInput.trim();
     setTextInput("");
@@ -124,98 +154,14 @@ export default function SpeakingPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Start recording audio
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
-      mediaRecorderRef.current = mediaRecorder;
-      chunksRef.current = [];
-
-      // -- Silence Detection Setup --
-      const audioContext = new AudioContext();
-      audioContextRef.current = audioContext;
-      const analyser = audioContext.createAnalyser();
-      analyserRef.current = analyser;
-      analyser.minDecibels = -60;
-      analyser.smoothingTimeConstant = 0.2;
-      
-      const source = audioContext.createMediaStreamSource(stream);
-      source.connect(analyser);
-      
-      isSpeakingRef.current = false;
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      
-      const detectSilence = () => {
-        analyser.getByteFrequencyData(dataArray);
-        let sum = 0;
-        for (let i = 0; i < dataArray.length; i++) {
-          sum += dataArray[i];
-        }
-        const average = sum / dataArray.length;
-        
-        // Volume threshold
-        if (average > 15) {
-          isSpeakingRef.current = true;
-          // Clear silence timer because they are talking
-          if (silenceTimerRef.current) {
-            clearTimeout(silenceTimerRef.current);
-            silenceTimerRef.current = null;
-          }
-        } else {
-          // If they were speaking and are now quiet, start a countdown of 2 seconds
-          if (isSpeakingRef.current && !silenceTimerRef.current) {
-            silenceTimerRef.current = setTimeout(() => {
-              if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-                mediaRecorderRef.current.stop();
-                setIsRecording(false);
-              }
-            }, 1800); // Wait 1.8 seconds of silence before auto-sending
-          }
-        }
-        
-        animationFrameRef.current = requestAnimationFrame(detectSilence);
-      };
-      
-      detectSilence();
-      // ----------------------------
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        // Cleanup detection
-        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-        if (audioContextRef.current?.state !== "closed") {
-          audioContextRef.current?.close();
-        }
-
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        stream.getTracks().forEach((t) => t.stop());
-        await sendAudioResponse(blob);
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (err) {
-      console.error("Microphone access denied:", err);
-    }
-  };
-
-  // Stop recording manually
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
+  }, [textInput, isLoading, sessionId, playAudio]);
 
   // Send audio response
-  const sendAudioResponse = async (blob: Blob) => {
+  const sendAudioResponse = useCallback(async (blob: Blob) => {
+    if (blob.size < 1500) {
+      return;
+    }
+
     setIsLoading(true);
     setMessages((prev) => [...prev, { role: "candidate", content: "(voice response — transcribing...)" }]);
 
@@ -251,7 +197,114 @@ export default function SpeakingPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [sessionId, playAudio]);
+
+  // Start recording audio
+  const startRecording = useCallback(async () => {
+    if (isRecording || isLoading || testState !== "testing") {
+      return;
+    }
+
+    try {
+      cleanupAudioResources();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      mediaRecorderRef.current = mediaRecorder;
+      mediaStreamRef.current = stream;
+      chunksRef.current = [];
+
+      // -- Silence Detection Setup --
+      const audioContext = new AudioContext();
+      audioContextRef.current = audioContext;
+      const analyser = audioContext.createAnalyser();
+      analyserRef.current = analyser;
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.35;
+      
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+      
+      hasDetectedSpeechRef.current = false;
+      const dataArray = new Uint8Array(analyser.fftSize);
+      const SILENCE_RMS_THRESHOLD = 0.018;
+      
+      const detectSilence = () => {
+        if (!analyserRef.current || !mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") {
+          return;
+        }
+
+        analyser.getByteTimeDomainData(dataArray);
+        let sumSquares = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          const normalized = (dataArray[i] - 128) / 128;
+          sumSquares += normalized * normalized;
+        }
+        const rms = Math.sqrt(sumSquares / dataArray.length);
+        
+        if (rms > SILENCE_RMS_THRESHOLD) {
+          hasDetectedSpeechRef.current = true;
+          // Clear silence timer because they are talking
+          if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = null;
+          }
+        } else {
+          // If they were speaking and are now quiet, start a countdown of 2 seconds
+          if (hasDetectedSpeechRef.current && !silenceTimerRef.current) {
+            silenceTimerRef.current = setTimeout(() => {
+              if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+                mediaRecorderRef.current.stop();
+                setIsRecording(false);
+              }
+            }, 1800); // Wait 1.8 seconds of silence before auto-sending
+          }
+        }
+        
+        animationFrameRef.current = requestAnimationFrame(detectSilence);
+      };
+      
+      detectSilence();
+      // ----------------------------
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        cleanupAudioResources();
+
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        await sendAudioResponse(blob);
+      };
+
+      mediaRecorder.start(250);
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Microphone access denied:", err);
+    }
+  }, [isRecording, isLoading, testState, sendAudioResponse, cleanupAudioResources]);
+
+  // Assign to ref for circular dependency handling
+  useEffect(() => {
+    startRecordingRef.current = startRecording;
+  }, [startRecording]);
+
+  // Stop recording manually
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      cleanupAudioResources();
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, [cleanupAudioResources]);
 
   // Get feedback
   const getFeedback = async () => {
@@ -410,13 +463,14 @@ export default function SpeakingPage() {
 
           {/* Input area */}
           {testState === "testing" && (
+            <div className="px-6 py-4 border-t border-border bg-surface/50">
               <div className="flex items-center justify-between mb-2">
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <div 
-                    className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${isAutoMode ? 'bg-accent' : 'bg-surface-hover border border-border'}`}
+                    className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${isAutoMode ? "bg-accent" : "bg-surface-hover border border-border"}`}
                     onClick={() => setIsAutoMode(!isAutoMode)}
                   >
-                    <div className={`absolute top-1 left-1 w-3 h-3 rounded-full bg-white transition-transform duration-200 ${isAutoMode ? 'translate-x-5' : 'translate-x-0 bg-text-muted'}`} />
+                    <div className={`absolute top-1 left-1 w-3 h-3 rounded-full bg-white transition-transform duration-200 ${isAutoMode ? "translate-x-5" : "translate-x-0 bg-text-muted"}`} />
                   </div>
                   <span className="text-xs font-medium text-text-muted group-hover:text-foreground transition-colors">Continuous Conversation Mode</span>
                 </label>
@@ -473,6 +527,7 @@ export default function SpeakingPage() {
               <p className="text-xs text-text-muted mt-2 text-center flex items-center justify-center gap-2">
                 {isRecording ? <><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Recording... Stop speaking for 1.8 seconds to auto-send, or click to send now</> : isAutoMode ? "System will automatically start listening after examiner finishes." : "Press the mic to record or type your answer"}
               </p>
+            </div>
           )}
 
           {/* Complete — Feedback area */}
