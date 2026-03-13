@@ -292,6 +292,7 @@ export default function SpeakingPage() {
               if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
                 mediaRecorderRef.current.stop();
                 setIsRecording(false);
+                setIsSystemListening(false);
               }
             }, 1800); // Wait 1.8 seconds of silence before auto-sending
           }
@@ -342,6 +343,8 @@ export default function SpeakingPage() {
       if (audioRef.current) {
         audioRef.current.pause();
       }
+      localRecordingUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      localRecordingUrlsRef.current = [];
     };
   }, [cleanupAudioResources]);
 
@@ -368,6 +371,8 @@ export default function SpeakingPage() {
   // Reset
   const resetTest = () => {
     cleanupAudioResources();
+    localRecordingUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    localRecordingUrlsRef.current = [];
     setIsExaminerSpeaking(false);
     setIsSystemListening(false);
     setCallStatus(CallStatus.INACTIVE);
@@ -522,7 +527,16 @@ export default function SpeakingPage() {
                   {msg.role === "examiner" && (
                     <span className="text-xs text-indigo-400 font-semibold block mb-1">Examiner</span>
                   )}
+                  {msg.role === "candidate" && (
+                    <span className="text-xs text-emerald-100 font-semibold block mb-1">You</span>
+                  )}
                   <p className="whitespace-pre-wrap">{msg.content}</p>
+                  {msg.role === "candidate" && msg.audioUrl && (
+                    <audio controls preload="metadata" className="mt-3 w-full max-w-xs">
+                      <source src={msg.audioUrl} type="audio/webm" />
+                      Your browser does not support audio playback.
+                    </audio>
+                  )}
                 </div>
               </div>
             ))}
