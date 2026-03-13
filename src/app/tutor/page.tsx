@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { MessageSquare, Send, Sparkles, Loader2, Paperclip, Mic, Layout, X } from "lucide-react";
 
 export default function TutorPage() {
+  const [sessionId, setSessionId] = useState("");
   const [messages, setMessages] = useState<{ role: "user" | "tutor", content: string }[]>([
     {
       role: "tutor",
@@ -18,6 +19,21 @@ export default function TutorPage() {
   
   const chatEndRef = useRef<HTMLDivElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const storageKey = "tutor_session_id";
+    const existing = localStorage.getItem(storageKey);
+    if (existing) {
+      setSessionId(existing);
+      return;
+    }
+    const generated =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `tutor-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    localStorage.setItem(storageKey, generated);
+    setSessionId(generated);
+  }, []);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -38,7 +54,8 @@ export default function TutorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           message: userMessage,
-          history: messages 
+          history: messages,
+          session_id: sessionId,
         })
       });
 
@@ -284,9 +301,9 @@ export default function TutorPage() {
 
       {/* Right Canvas Pane */}
       <div className={`transition-all duration-300 ease-in-out bg-surface/30 flex flex-col border-l border-border relative ${activeCanvasContent ? 'w-[55%]' : 'w-0'}`}>
-        <div className="absolute inset-0 flex flex-col overflow-hidden min-w-[300px]">
+        <div className="absolute inset-0 flex flex-col overflow-hidden min-w-75">
            {/* Canvas Header */}
-           <div className="h-[73px] shrink-0 border-b border-border bg-surface/50 backdrop-blur flex items-center justify-between px-6">
+           <div className="h-18.25 shrink-0 border-b border-border bg-surface/50 backdrop-blur flex items-center justify-between px-6">
              <h2 className="text-lg font-semibold flex items-center gap-2.5 text-foreground">
                <Layout className="w-5 h-5 text-accent" />
                Artifact Canvas
