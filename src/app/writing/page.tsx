@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { PenTool, Upload, Loader2, Clock, Send, Sparkles, User, Bot, Paperclip, Mic } from "lucide-react";
+import { PenTool, Upload, Loader2, Clock, Send, Sparkles, User, Bot, Paperclip, Mic, ZoomIn, ZoomOut, X } from "lucide-react";
 
 const API_BASE = "http://localhost:8000/api/writing";
 
@@ -36,6 +36,8 @@ export default function WritingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
+  const [imageZoomLevel, setImageZoomLevel] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Timer state
@@ -147,6 +149,24 @@ export default function WritingPage() {
   };
 
   const wordCount = essayText.trim().split(/\s+/).filter((w) => w.length > 0).length;
+
+  const openImageZoom = () => {
+    setImageZoomLevel(1);
+    setIsImageZoomOpen(true);
+  };
+
+  const closeImageZoom = () => {
+    setIsImageZoomOpen(false);
+    setImageZoomLevel(1);
+  };
+
+  const increaseZoom = () => {
+    setImageZoomLevel((prev) => Math.min(3, Number((prev + 0.25).toFixed(2))));
+  };
+
+  const decreaseZoom = () => {
+    setImageZoomLevel((prev) => Math.max(1, Number((prev - 0.25).toFixed(2))));
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -449,11 +469,21 @@ export default function WritingPage() {
               {selectedPrompt?.image_url && (
                 <div className="w-1/3 shrink-0 rounded-xl overflow-hidden border border-border shadow-sm">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img 
-                    src={selectedPrompt.image_url} 
-                    alt="Task Visual" 
-                    className="w-full h-full object-contain bg-white"
-                  />
+                  <button
+                    onClick={openImageZoom}
+                    className="w-full h-full relative group cursor-zoom-in"
+                    title="Open zoom view"
+                  >
+                    <img 
+                      src={selectedPrompt.image_url} 
+                      alt="Task Visual" 
+                      className="w-full h-full object-contain bg-white"
+                    />
+                    <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/70 text-white text-[10px] px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ZoomIn className="w-3 h-3" />
+                      Zoom
+                    </span>
+                  </button>
                 </div>
               )}
             </div>
@@ -573,6 +603,52 @@ export default function WritingPage() {
           )}
         </div>
       </main>
+
+      {isImageZoomOpen && selectedPrompt?.image_url && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/20">
+            <h3 className="text-white font-semibold">Chart Zoom View</h3>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={decreaseZoom}
+                disabled={imageZoomLevel <= 1}
+                className="w-10 h-10 rounded-lg bg-white/10 text-white border border-white/20 hover:bg-white/20 disabled:opacity-40 flex items-center justify-center cursor-pointer"
+                title="Zoom out"
+              >
+                <ZoomOut className="w-5 h-5" />
+              </button>
+              <span className="text-white text-sm min-w-14 text-center">{Math.round(imageZoomLevel * 100)}%</span>
+              <button
+                onClick={increaseZoom}
+                disabled={imageZoomLevel >= 3}
+                className="w-10 h-10 rounded-lg bg-white/10 text-white border border-white/20 hover:bg-white/20 disabled:opacity-40 flex items-center justify-center cursor-pointer"
+                title="Zoom in"
+              >
+                <ZoomIn className="w-5 h-5" />
+              </button>
+              <button
+                onClick={closeImageZoom}
+                className="w-10 h-10 rounded-lg bg-rose-500/80 text-white border border-rose-300/30 hover:bg-rose-500 flex items-center justify-center cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-auto p-6">
+            <div className="w-full h-full min-h-[60vh] bg-white rounded-xl border border-white/30 shadow-2xl overflow-auto">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={selectedPrompt.image_url}
+                alt="Zoomed Task Visual"
+                className="origin-top-left select-none"
+                style={{ transform: `scale(${imageZoomLevel})`, width: "100%", height: "auto" }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
