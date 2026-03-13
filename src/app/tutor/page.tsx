@@ -1,20 +1,19 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  MessageSquare,
-  Send,
-  Sparkles,
-  Loader2,
-  Paperclip,
-  Mic,
-  Layout,
-  X,
   ArrowLeft,
   Bot,
+  Layout,
+  Loader2,
+  MessageSquare,
+  Mic,
+  Paperclip,
+  Send,
   User,
+  X,
 } from "lucide-react";
 import TutorRichText from "@/components/TutorRichText";
 
@@ -22,32 +21,25 @@ type TutorMessage = { role: "user" | "tutor"; content: string };
 
 export default function TutorPage() {
   const router = useRouter();
+
   const [sessionId, setSessionId] = useState("");
   const [messages, setMessages] = useState<TutorMessage[]>([
     {
       role: "tutor",
       content:
-        "Welcome to your AI IELTS Tutor. Ask me anything about Speaking, Writing, Reading, or Listening. I can also use live web grounding and your uploaded PDFs.",
+        "Welcome to your AI IELTS Tutor. Ask me anything about Speaking, Writing, Reading, or Listening. I can also ground answers with live web search and your uploaded PDFs.",
     },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [activeCanvasContent, setActiveCanvasContent] = useState<string | null>(null);
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [activeCanvasContent, setActiveCanvasContent] = useState<string | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-
-  const handleBack = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-      return;
-    }
-    router.push("/");
-  };
 
   useEffect(() => {
     const storageKey = "tutor_session_id";
@@ -61,21 +53,30 @@ export default function TutorPage() {
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
         : `tutor-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
     localStorage.setItem(storageKey, generated);
     setSessionId(generated);
   }, []);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isLoading]);
+
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push("/");
+  };
 
   const sendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!input.trim() || isLoading) return;
 
     const userMessage = input.trim();
-    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setInput("");
+    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setIsLoading(true);
 
     try {
@@ -89,11 +90,10 @@ export default function TutorPage() {
         }),
       });
 
-      if (!res.ok) throw new Error("API Error");
+      if (!res.ok) throw new Error("Tutor API failed");
       const data = await res.json();
       setMessages((prev) => [...prev, { role: "tutor", content: data.response }]);
-    } catch (error) {
-      console.error(error);
+    } catch {
       setMessages((prev) => [
         ...prev,
         { role: "tutor", content: "I hit a connection issue. Please try again in a moment." },
@@ -105,24 +105,30 @@ export default function TutorPage() {
 
   const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !file.name.endsWith(".pdf")) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
       alert("Please select a valid PDF file.");
       return;
     }
 
     setIsUploadingPdf(true);
-    setMessages((prev) => [...prev, { role: "user", content: `(Attached ${file.name})` }]);
-    setMessages((prev) => [...prev, { role: "tutor", content: "Reading your document now..." }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: `(Attached ${file.name})` },
+      { role: "tutor", content: "Reading your document now..." },
+    ]);
 
     try {
       const formData = new FormData();
       formData.append("file", file);
+
       const res = await fetch("http://localhost:8000/api/documents/upload", {
         method: "POST",
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Failed to process document");
+      if (!res.ok) throw new Error("PDF upload failed");
+
       setMessages((prev) => [
         ...prev,
         {
@@ -130,9 +136,14 @@ export default function TutorPage() {
           content: "Document indexed successfully. Ask me questions and I will ground answers on your file.",
         },
       ]);
-    } catch (err) {
-      console.error("PDF upload failed:", err);
-      setMessages((prev) => [...prev, { role: "tutor", content: "I could not read that PDF. Please try another file." }]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "tutor",
+          content: "I could not read that PDF. Please try another file.",
+        },
+      ]);
     } finally {
       setIsUploadingPdf(false);
       if (pdfInputRef.current) pdfInputRef.current.value = "";
@@ -148,15 +159,15 @@ export default function TutorPage() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
       audioChunksRef.current = [];
 
-      mediaRecorder.ondataavailable = (event) => {
+      recorder.ondataavailable = (event) => {
         if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
 
-      mediaRecorder.onstop = async () => {
+      recorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         const formData = new FormData();
         formData.append("audio", audioBlob, "recording.webm");
@@ -166,108 +177,116 @@ export default function TutorPage() {
             method: "POST",
             body: formData,
           });
-          const data = await res.json();
-          if (data.text) setInput((prev) => (prev ? `${prev} ${data.text}` : data.text));
-        } catch (error) {
-          console.error("Transcription error:", error);
-        }
 
-        stream.getTracks().forEach((track) => track.stop());
+          if (!res.ok) throw new Error("Transcription failed");
+          const data = await res.json();
+          if (data.text) {
+            setInput((prev) => (prev ? `${prev} ${data.text}` : data.text));
+          }
+        } catch {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "tutor",
+              content: "I could not transcribe the recording. Please try again.",
+            },
+          ]);
+        } finally {
+          stream.getTracks().forEach((track) => track.stop());
+        }
       };
 
-      mediaRecorder.start();
+      recorder.start();
       setIsListening(true);
-    } catch (error) {
-      console.error("Error accessing microphone:", error);
+    } catch {
       alert("Please allow microphone access to use voice input.");
     }
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="hero-glow absolute left-1/2 -translate-x-1/2 -top-50" />
-      <div className="hero-glow absolute -right-25 -bottom-75 opacity-45" />
-
-      <header className="relative z-20 border-b border-border bg-surface/75 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-5 sm:px-6 py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
+    <div className="min-h-dvh bg-background">
+      <header className="sticky top-0 z-20 border-b border-border bg-surface/80 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={handleBack}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full border border-border bg-surface text-text-muted hover:text-foreground hover:bg-surface-hover transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-2 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
               title="Go back"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="h-4 w-4" />
               Back
             </button>
-            <div className="p-2 rounded-xl bg-accent/15 border border-accent/30 text-accent-light">
-              <MessageSquare className="w-5 h-5" />
+
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-accent/30 bg-accent/15 text-accent-light">
+              <MessageSquare className="h-5 w-5" />
             </div>
+
             <div className="min-w-0">
-              <h1 className="text-lg font-semibold truncate">AI Tutor Workspace</h1>
-              <p className="text-xs text-text-muted truncate">Modern coaching with live search, OCR, mic input, and document grounding</p>
+              <h1 className="truncate text-base font-semibold sm:text-lg">AI Tutor Workspace</h1>
+              <p className="truncate text-xs text-text-muted">Stable chat, live grounding, PDF support, and voice input</p>
             </div>
           </div>
-          <div className="hidden sm:flex items-center gap-2">
-            <Link href="/" className="px-4 py-2 rounded-full bg-surface border border-border text-sm text-foreground hover:bg-surface-hover transition-colors">
+
+          <div className="hidden items-center gap-2 sm:flex">
+            <Link
+              href="/"
+              className="rounded-full border border-border bg-surface px-4 py-2 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            >
               Home
             </Link>
-            <Link href="/writing" className="px-4 py-2 rounded-full bg-accent/15 border border-accent/30 text-sm text-accent-light hover:bg-accent/25 transition-colors">
+            <Link
+              href="/writing"
+              className="rounded-full border border-accent/40 bg-accent/10 px-4 py-2 text-sm text-accent-light transition-colors hover:bg-accent/20"
+            >
               Writing
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 h-[calc(100vh-130px)]">
-          <section
-            className={`glass-card overflow-hidden flex flex-col animate-slide-up-fade ${
-              activeCanvasContent ? "xl:col-span-7" : "xl:col-span-12"
-            }`}
-          >
-            <div className="px-5 py-4 border-b border-border bg-surface/60">
-              <div className="flex items-center gap-2 text-sm text-text-muted">
-                <Sparkles className="w-4 h-4 text-emerald-400" />
-                Professional IELTS tutoring with grounded responses
-              </div>
+      <main className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+        <div className="grid min-h-[calc(100dvh-110px)] grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+          <section className="glass-card flex min-h-[70dvh] flex-col overflow-hidden xl:min-h-0">
+            <div className="border-b border-border bg-surface/60 px-4 py-3 sm:px-5">
+              <p className="text-sm text-text-muted">Ask detailed IELTS questions and open good tutor responses in Canvas.</p>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 sm:p-6 flex flex-col gap-5 bg-surface/10">
+            <div className="flex-1 space-y-4 overflow-y-auto bg-surface/10 p-4 sm:p-5">
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className="max-w-[90%]">
-                    <div className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-                    <div
-                      className={`w-8 h-8 mt-1 rounded-full shrink-0 flex items-center justify-center ${
-                        msg.role === "user" ? "bg-emerald-500/20 text-emerald-400" : "bg-accent/20 text-accent"
-                      }`}
-                    >
-                      {msg.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-                    </div>
+                  <div className="max-w-[92%] sm:max-w-[85%]">
+                    <div className={`flex items-start gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+                      <div
+                        className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                          msg.role === "user" ? "bg-emerald-500/20 text-emerald-400" : "bg-accent/20 text-accent"
+                        }`}
+                      >
+                        {msg.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                      </div>
 
-                    <div
-                      className={`p-4 rounded-2xl ${
-                        msg.role === "user"
-                          ? "bg-accent text-white rounded-tr-sm"
-                          : "bg-surface border border-border text-foreground rounded-tl-sm"
-                      }`}
-                    >
-                      {msg.role === "tutor" ? (
-                        <TutorRichText content={msg.content} className="text-foreground" />
-                      ) : (
-                        <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
-                      )}
-                    </div>
+                      <div
+                        className={`rounded-2xl px-4 py-3 ${
+                          msg.role === "user"
+                            ? "rounded-tr-sm bg-accent text-white"
+                            : "rounded-tl-sm border border-border bg-surface text-foreground"
+                        }`}
+                      >
+                        {msg.role === "tutor" ? (
+                          <TutorRichText content={msg.content} className="text-foreground" />
+                        ) : (
+                          <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                        )}
+                      </div>
                     </div>
 
                     {msg.role === "tutor" && msg.content.length > 80 && (
-                      <div className="mt-2 ml-11">
+                      <div className="mt-2 ml-10 sm:ml-11">
                         <button
                           onClick={() => setActiveCanvasContent(msg.content)}
-                          className="flex items-center gap-1.5 text-xs font-medium text-accent hover:text-accent-light bg-accent/10 hover:bg-accent/20 px-3 py-1.5 rounded-full transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20 hover:text-accent-light"
                           title="Show in Canvas"
                         >
-                          <Layout className="w-3.5 h-3.5" />
+                          <Layout className="h-3.5 w-3.5" />
                           Show in Canvas
                         </button>
                       </div>
@@ -278,99 +297,125 @@ export default function TutorPage() {
 
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-surface border border-border p-4 rounded-2xl rounded-tl-sm flex items-center gap-2 text-text-muted text-sm">
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                  <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-border bg-surface px-4 py-3 text-sm text-text-muted">
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Thinking and grounding response...
                   </div>
                 </div>
               )}
-              <div ref={chatEndRef} className="h-2 shrink-0" />
+
+              <div ref={chatEndRef} />
             </div>
 
-            <form onSubmit={sendMessage} className="p-4 border-t border-border bg-surface/50">
-              <div className="relative flex items-center gap-2">
-                <input
-                  type="file"
-                  accept=".pdf"
-                  className="hidden"
-                  ref={pdfInputRef}
-                  onChange={handlePdfUpload}
-                  title="Upload PDF material"
-                />
+            <form onSubmit={sendMessage} className="border-t border-border bg-surface/60 p-3 sm:p-4">
+              <input
+                ref={pdfInputRef}
+                type="file"
+                accept=".pdf"
+                className="hidden"
+                onChange={handlePdfUpload}
+                title="Upload PDF"
+              />
 
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => pdfInputRef.current?.click()}
                   disabled={isUploadingPdf || isLoading}
-                  className="w-11 h-11 shrink-0 rounded-xl bg-surface border border-border flex items-center justify-center hover:bg-surface-hover text-text-muted hover:text-foreground transition-colors disabled:opacity-50 cursor-pointer"
-                  title="Attach PDF Document"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-surface text-text-muted transition-colors hover:bg-surface-hover hover:text-foreground disabled:opacity-50"
+                  title="Attach PDF"
                 >
-                  {isUploadingPdf ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
+                  {isUploadingPdf ? <Loader2 className="h-5 w-5 animate-spin" /> : <Paperclip className="h-5 w-5" />}
                 </button>
 
                 <button
                   type="button"
                   onClick={toggleMic}
-                  disabled={isLoading || isUploadingPdf}
-                  className={`w-11 h-11 shrink-0 rounded-xl border flex items-center justify-center transition-colors disabled:opacity-50 cursor-pointer ${
+                  disabled={isUploadingPdf || isLoading}
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:opacity-50 ${
                     isListening
-                      ? "bg-red-500/20 border-red-500/50 text-red-500 animate-pulse"
-                      : "bg-surface border-border hover:bg-surface-hover text-text-muted hover:text-foreground"
+                      ? "animate-pulse border-red-500/50 bg-red-500/20 text-red-500"
+                      : "border-border bg-surface text-text-muted hover:bg-surface-hover hover:text-foreground"
                   }`}
-                  title="Voice Input"
+                  title="Voice input"
                 >
-                  <Mic className="w-5 h-5" />
+                  <Mic className="h-5 w-5" />
                 </button>
 
-                <div className="relative flex-1">
+                <div className="relative min-w-0 flex-1">
                   <input
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask for IELTS help, upload a PDF, or use voice..."
+                    placeholder="Ask your IELTS question..."
                     disabled={isLoading}
-                    className="w-full bg-background border border-border rounded-xl pl-4 pr-12 py-3.5 text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:border-accent/50 transition-colors"
+                    className="w-full rounded-xl border border-border bg-background py-3 pl-4 pr-12 text-sm text-foreground placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
                   />
                   <button
                     type="submit"
                     disabled={isLoading || !input.trim()}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg bg-accent text-white flex items-center justify-center hover:bg-accent-light disabled:opacity-50 transition-colors cursor-pointer"
-                    title="Send Message"
+                    className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg bg-accent text-white transition-colors hover:bg-accent-light disabled:opacity-50"
+                    title="Send message"
                   >
-                    <Send className="w-4 h-4" />
+                    <Send className="h-4 w-4" />
                   </button>
                 </div>
               </div>
-              <p className="text-[10px] text-text-muted text-center mt-3 opacity-80">
-                Live tutoring with real-time search grounding, PDF RAG, OCR support, and microphone input.
-              </p>
             </form>
           </section>
 
-          {activeCanvasContent && (
-            <aside className="xl:col-span-5 glass-card overflow-hidden flex flex-col animate-slide-right-fade">
-              <div className="h-18.25 shrink-0 border-b border-border bg-surface/60 flex items-center justify-between px-5">
-                <h2 className="text-lg font-semibold flex items-center gap-2 text-foreground">
-                  <Layout className="w-5 h-5 text-accent" />
-                  Artifact Canvas
-                </h2>
+          <aside className="glass-card hidden min-h-[70dvh] flex-col overflow-hidden xl:flex">
+            <div className="flex items-center justify-between border-b border-border bg-surface/60 px-4 py-3">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Layout className="h-4 w-4 text-accent" />
+                Artifact Canvas
+              </h2>
+              {activeCanvasContent && (
                 <button
                   onClick={() => setActiveCanvasContent(null)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:bg-border hover:text-foreground transition-colors cursor-pointer"
-                  title="Close Canvas"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+                  title="Close canvas"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="h-4 w-4" />
                 </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                <div className="whitespace-pre-wrap text-foreground leading-relaxed text-[15px]">
-                  {activeCanvasContent}
+              )}
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              {activeCanvasContent ? (
+                <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{activeCanvasContent}</div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border bg-surface/40 p-4 text-sm text-text-muted">
+                  Open any tutor response in Canvas to focus on long feedback, outlines, and writing plans.
                 </div>
-              </div>
-            </aside>
-          )}
+              )}
+            </div>
+          </aside>
         </div>
       </main>
+
+      {activeCanvasContent && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/40 p-3 xl:hidden">
+          <div className="glass-card flex max-h-[82dvh] w-full flex-col overflow-hidden">
+            <div className="flex items-center justify-between border-b border-border bg-surface/70 px-4 py-3">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Layout className="h-4 w-4 text-accent" />
+                Artifact Canvas
+              </h3>
+              <button
+                onClick={() => setActiveCanvasContent(null)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+                title="Close canvas"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{activeCanvasContent}</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

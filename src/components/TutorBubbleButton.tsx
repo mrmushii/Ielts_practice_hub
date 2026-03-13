@@ -10,6 +10,7 @@ type TutorMessage = { role: "user" | "tutor"; content: string };
 
 export default function TutorBubbleButton() {
   const pathname = usePathname();
+  const hideOnTutorPage = pathname === "/tutor";
   const [isOpen, setIsOpen] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [messages, setMessages] = useState<TutorMessage[]>([
@@ -21,9 +22,6 @@ export default function TutorBubbleButton() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
-
-  // Hide bubble on the tutor page itself.
-  if (pathname === "/tutor") return null;
 
   useEffect(() => {
     const key = "tutor_popup_session_id";
@@ -76,6 +74,8 @@ export default function TutorBubbleButton() {
       setIsLoading(false);
     }
   };
+
+  if (hideOnTutorPage) return null;
 
   return (
     <>
