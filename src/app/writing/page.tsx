@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { PenTool, Upload, Loader2, Clock, Send, Sparkles, User, Bot, Paperclip } from "lucide-react";
+import { PenTool, Upload, Loader2, Clock, Send, Sparkles, User, Bot, Paperclip, Mic } from "lucide-react";
 
 const API_BASE = "http://localhost:8000/api/writing";
 
@@ -49,8 +49,61 @@ export default function WritingPage() {
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const toggleMic = async () => {
+    if (isListening) {
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.webm');
+
+        try {
+          const res = await fetch('http://localhost:8000/api/tutor/transcribe', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await res.json();
+          if (data.text) {
+            setChatInput(prev => prev ? `${prev} ${data.text}` : data.text);
+          }
+        } catch (error) {
+          console.error("Transcription error:", error);
+        }
+
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsListening(true);
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      alert("Please allow microphone access to use voice input.");
+    }
+  };
 
   // Auto-scroll tutor chat
   useEffect(() => {
@@ -315,6 +368,7 @@ export default function WritingPage() {
                 onChange={handlePdfUpload} 
                 title="Upload PDF rulebook or material"
               />
+              {/* Upload Button */}
               <button
                 type="button"
                 onClick={() => pdfInputRef.current?.click()}
@@ -323,6 +377,21 @@ export default function WritingPage() {
                 title="Attach PDF Document"
               >
                 {isUploadingPdf ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
+              </button>
+
+              {/* Mic Button */}
+              <button
+                type="button"
+                onClick={toggleMic}
+                disabled={isChatLoading || isUploadingPdf}
+                className={`w-10 h-10 shrink-0 rounded-xl border flex items-center justify-center transition-colors disabled:opacity-50 cursor-pointer ${
+                  isListening 
+                    ? "bg-red-500/20 border-red-500/50 text-red-500 animate-pulse" 
+                    : "bg-surface border-border hover:bg-surface-hover text-text-muted hover:text-foreground"
+                }`}
+                title="Voice Input"
+              >
+                <Mic className="w-5 h-5" />
               </button>
               
               <div className="relative flex-1">

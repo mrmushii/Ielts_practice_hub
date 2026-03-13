@@ -118,7 +118,7 @@ export default function TutorPage() {
         formData.append('audio', audioBlob, 'recording.webm');
 
         try {
-          const res = await fetch('/api/tutor/transcribe', {
+          const res = await fetch('http://localhost:8000/api/tutor/transcribe', {
             method: 'POST',
             body: formData
           });
