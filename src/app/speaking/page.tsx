@@ -13,13 +13,23 @@ type Message = {
 
 type TestState = "idle" | "testing" | "complete";
 
+enum CallStatus {
+  INACTIVE = "INACTIVE",
+  CONNECTING = "CONNECTING",
+  ACTIVE = "ACTIVE",
+  FINISHED = "FINISHED",
+}
+
 export default function SpeakingPage() {
   const [testState, setTestState] = useState<TestState>("idle");
   const [sessionId, setSessionId] = useState("");
   const [currentPart, setCurrentPart] = useState(1);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isRecording, setIsRecording] = useState(false);
+  const [isExaminerSpeaking, setIsExaminerSpeaking] = useState(false);
+  const [isSystemListening, setIsSystemListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [callStatus, setCallStatus] = useState<CallStatus>(CallStatus.INACTIVE);
   const [feedback, setFeedback] = useState("");
   const [showFeedback, setShowFeedback] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState("british_female");
@@ -90,14 +100,21 @@ export default function SpeakingPage() {
     }
     const audio = new Audio(`http://localhost:8000${audioUrl}`);
     audioRef.current = audio;
+    setIsExaminerSpeaking(true);
     
     audio.onended = () => {
+      setIsExaminerSpeaking(false);
       if (isAutoMode && testState === "testing" && !isRecording && !isLoading) {
         startRecordingRef.current?.();
       }
     };
 
+    audio.onerror = () => {
+      setIsExaminerSpeaking(false);
+    };
+
     audio.play().catch(() => {
+      setIsExaminerSpeaking(false);
       // Fallback for autoplay restrictions: still keep the conversation moving.
       if (isAutoMode && testState === "testing" && !isRecording && !isLoading) {
         startRecordingRef.current?.();
@@ -107,6 +124,7 @@ export default function SpeakingPage() {
 
   // Start the test
   const startTest = async () => {
+    setCallStatus(CallStatus.CONNECTING);
     setIsLoading(true);
     try {
       const res = await fetch(`${API_BASE}/start`, {
@@ -119,8 +137,10 @@ export default function SpeakingPage() {
       setCurrentPart(data.part);
       setMessages([{ role: "examiner", content: data.examiner_text }]);
       setTestState("testing");
+      setCallStatus(CallStatus.ACTIVE);
       playAudio(data.audio_url);
     } catch (err) {
+      setCallStatus(CallStatus.INACTIVE);
       console.error("Failed to start test:", err);
     } finally {
       setIsLoading(false);
@@ -148,6 +168,7 @@ export default function SpeakingPage() {
 
       if (data.is_complete) {
         setTestState("complete");
+        setCallStatus(CallStatus.FINISHED);
       }
     } catch (err) {
       console.error("Failed to send response:", err);
@@ -191,6 +212,7 @@ export default function SpeakingPage() {
 
       if (data.is_complete) {
         setTestState("complete");
+        setCallStatus(CallStatus.FINISHED);
       }
     } catch (err) {
       console.error("Failed to send audio:", err);
@@ -279,6 +301,7 @@ export default function SpeakingPage() {
 
       mediaRecorder.start(250);
       setIsRecording(true);
+      setIsSystemListening(true);
     } catch (err) {
       console.error("Microphone access denied:", err);
     }
@@ -294,6 +317,7 @@ export default function SpeakingPage() {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      setIsSystemListening(false);
     }
   }, []);
 
@@ -328,6 +352,10 @@ export default function SpeakingPage() {
 
   // Reset
   const resetTest = () => {
+    cleanupAudioResources();
+    setIsExaminerSpeaking(false);
+    setIsSystemListening(false);
+    setCallStatus(CallStatus.INACTIVE);
     setTestState("idle");
     setSessionId("");
     setMessages([]);
@@ -336,6 +364,31 @@ export default function SpeakingPage() {
     setShowFeedback(false);
     setTimeLeft(840);
   };
+
+  const endConversation = () => {
+    cleanupAudioResources();
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    setIsRecording(false);
+    setIsExaminerSpeaking(false);
+    setIsSystemListening(false);
+    setCallStatus(CallStatus.FINISHED);
+    setTestState("complete");
+  };
+
+  const statusText =
+    callStatus === CallStatus.CONNECTING
+      ? "Calling"
+      : isExaminerSpeaking
+      ? "Replying"
+      : isSystemListening
+      ? "Listening"
+      : callStatus === CallStatus.ACTIVE
+      ? "Active"
+      : callStatus === CallStatus.FINISHED
+      ? "Finished"
+      : "Idle";
 
   const partLabels: Record<number, string> = {
     1: "Part 1 — Introduction & Interview",
@@ -353,6 +406,19 @@ export default function SpeakingPage() {
         <div className="flex items-center gap-4">
           {testState === "testing" && (
             <>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                  statusText === "Calling"
+                    ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                    : statusText === "Replying"
+                    ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/30"
+                    : statusText === "Listening"
+                    ? "bg-rose-500/10 text-rose-400 border-rose-500/30"
+                    : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                }`}
+              >
+                {statusText}
+              </span>
               <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-background border border-border">
                 <Clock className={`w-4 h-4 ${timeLeft < 180 ? 'text-rose-500 animate-pulse' : 'text-text-muted'}`} />
                 <span className={`font-mono font-medium ${timeLeft < 180 ? 'text-rose-500' : 'text-foreground'}`}>
@@ -527,6 +593,14 @@ export default function SpeakingPage() {
               <p className="text-xs text-text-muted mt-2 text-center flex items-center justify-center gap-2">
                 {isRecording ? <><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Recording... Stop speaking for 1.8 seconds to auto-send, or click to send now</> : isAutoMode ? "System will automatically start listening after examiner finishes." : "Press the mic to record or type your answer"}
               </p>
+              <div className="mt-3 flex justify-center">
+                <button
+                  onClick={endConversation}
+                  className="px-5 py-2 rounded-full bg-rose-500 text-white text-sm font-semibold hover:bg-rose-400 transition-colors cursor-pointer"
+                >
+                  End Conversation
+                </button>
+              </div>
             </div>
           )}
 
