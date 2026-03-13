@@ -34,6 +34,10 @@ export default function SpeakingPage() {
   const [feedback, setFeedback] = useState("");
   const [showFeedback, setShowFeedback] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState("british_female");
+  const [candidateName, setCandidateName] = useState("");
+  const [candidateBackground, setCandidateBackground] = useState("");
+  const [candidateHometown, setCandidateHometown] = useState("");
+  const [candidateInterests, setCandidateInterests] = useState("");
   const [textInput, setTextInput] = useState("");
   const [timeLeft, setTimeLeft] = useState(840); // 14 mins
 
@@ -124,7 +128,13 @@ export default function SpeakingPage() {
       const res = await fetch(`${API_BASE}/start`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `voice=${selectedVoice}`,
+        body: new URLSearchParams({
+          voice: selectedVoice,
+          candidate_name: candidateName,
+          candidate_background: candidateBackground,
+          candidate_hometown: candidateHometown,
+          candidate_interests: candidateInterests,
+        }).toString(),
       });
       const data = await res.json();
       setSessionId(data.session_id);
@@ -481,6 +491,38 @@ export default function SpeakingPage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="space-y-3 text-left">
+              <label className="text-sm text-text-muted font-medium block">Personal Context (Optional)</label>
+              <input
+                type="text"
+                value={candidateName}
+                onChange={(e) => setCandidateName(e.target.value)}
+                placeholder="Your name"
+                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:border-accent/50"
+              />
+              <input
+                type="text"
+                value={candidateBackground}
+                onChange={(e) => setCandidateBackground(e.target.value)}
+                placeholder="Work or studies (e.g., Computer Science student)"
+                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:border-accent/50"
+              />
+              <input
+                type="text"
+                value={candidateHometown}
+                onChange={(e) => setCandidateHometown(e.target.value)}
+                placeholder="Hometown or current city"
+                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:border-accent/50"
+              />
+              <input
+                type="text"
+                value={candidateInterests}
+                onChange={(e) => setCandidateInterests(e.target.value)}
+                placeholder="Interests (e.g., reading, football, travel)"
+                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:border-accent/50"
+              />
             </div>
 
             <button
