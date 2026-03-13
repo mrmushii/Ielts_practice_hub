@@ -9,6 +9,7 @@ const API_BASE = "http://localhost:8000/api/speaking";
 type Message = {
   role: "examiner" | "candidate";
   content: string;
+  audioUrl?: string;
 };
 
 type TestState = "idle" | "testing" | "complete";
@@ -42,6 +43,7 @@ export default function SpeakingPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const localRecordingUrlsRef = useRef<string[]>([]);
 
   // Silence Detection Refs
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -184,7 +186,16 @@ export default function SpeakingPage() {
     }
 
     setIsLoading(true);
-    setMessages((prev) => [...prev, { role: "candidate", content: "(voice response — transcribing...)" }]);
+    const localAudioUrl = URL.createObjectURL(blob);
+    localRecordingUrlsRef.current.push(localAudioUrl);
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "candidate",
+        content: "(voice response — transcribing...)",
+        audioUrl: localAudioUrl,
+      },
+    ]);
 
     try {
       const formData = new FormData();
@@ -202,7 +213,11 @@ export default function SpeakingPage() {
         const updated = [...prev];
         const lastCandidate = updated.findLastIndex((m) => m.role === "candidate");
         if (lastCandidate >= 0 && updated[lastCandidate].content.includes("transcribing")) {
-          updated[lastCandidate] = { role: "candidate", content: "(voice response)" };
+          const transcriptText = data.candidate_text?.trim();
+          updated[lastCandidate] = {
+            ...updated[lastCandidate],
+            content: transcriptText && transcriptText.length > 0 ? transcriptText : "(voice response)",
+          };
         }
         return [...updated, { role: "examiner", content: data.examiner_text }];
       });
