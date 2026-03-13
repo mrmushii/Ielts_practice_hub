@@ -80,7 +80,7 @@ export default function TutorBubbleButton() {
   return (
     <>
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-24px)] h-[560px] max-h-[calc(100vh-120px)] animate-slide-up-fade">
+        <div className="fixed bottom-24 right-6 z-50 w-90 max-w-[calc(100vw-24px)] h-140 max-h-[calc(100vh-120px)] animate-slide-up-fade">
           <div className="h-full rounded-2xl border border-white/15 bg-surface/85 backdrop-blur-xl shadow-2xl shadow-black/40 overflow-hidden flex flex-col">
             <div className="px-4 py-3 border-b border-border bg-surface/70 flex items-center justify-between">
               <div className="flex items-center gap-2">
