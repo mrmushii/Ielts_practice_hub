@@ -2,13 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import { MessageSquare, Send, Sparkles, Loader2, Paperclip, Mic, Layout, X } from "lucide-react";
+import TutorRichText from "@/components/TutorRichText";
 
 export default function TutorPage() {
   const [sessionId, setSessionId] = useState("");
-  const [langgraphStatus, setLanggraphStatus] = useState<{
-    checkpoint_mode: string;
-    enabled_modules: Record<string, boolean>;
-  } | null>(null);
   const [messages, setMessages] = useState<{ role: "user" | "tutor", content: string }[]>([
     {
       role: "tutor",
@@ -42,26 +39,6 @@ export default function TutorPage() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        const res = await fetch("http://localhost:8000/api/langgraph-status");
-        if (!res.ok) return;
-        const data = await res.json();
-        const info = data?.langgraph;
-        if (!info) return;
-        setLanggraphStatus({
-          checkpoint_mode: info.checkpoint_mode || "memory",
-          enabled_modules: info.enabled_modules || {},
-        });
-      } catch {
-        // Status badge is optional; fail silently.
-      }
-    };
-
-    fetchStatus();
-  }, []);
 
   const sendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -200,25 +177,6 @@ export default function TutorPage() {
                 <Sparkles className="w-4 h-4 text-emerald-400" />
                 Empowered with Search, OCR, and Deep RAG
               </p>
-              {langgraphStatus && (
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
-                  <span className="px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-medium">
-                    LangGraph: {langgraphStatus.checkpoint_mode}
-                  </span>
-                  {Object.entries(langgraphStatus.enabled_modules).map(([module, enabled]) => (
-                    <span
-                      key={module}
-                      className={`px-2 py-1 rounded-full border font-medium ${
-                        enabled
-                          ? "bg-cyan-500/10 text-cyan-300 border-cyan-500/30"
-                          : "bg-rose-500/10 text-rose-300 border-rose-500/30"
-                      }`}
-                    >
-                      {module}: {enabled ? "on" : "off"}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -242,7 +200,11 @@ export default function TutorPage() {
                     ? "bg-accent text-white rounded-tr-sm" 
                     : "bg-surface border border-border text-foreground rounded-tl-sm prose prose-sm prose-invert max-w-none"
                 }`}>
-                  <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                  {msg.role === "tutor" ? (
+                    <TutorRichText content={msg.content} className="text-foreground" />
+                  ) : (
+                    <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                  )}
                 </div>
               </div>
               

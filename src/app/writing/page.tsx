@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { PenTool, Upload, Loader2, Clock, Send, Sparkles, User, Bot, Paperclip, Mic, ZoomIn, ZoomOut, X } from "lucide-react";
+import TutorRichText from "@/components/TutorRichText";
 
 const API_BASE = "http://localhost:8000/api/writing";
 
@@ -354,7 +355,11 @@ export default function WritingPage() {
                     ? "bg-surface border border-border text-foreground rounded-br-sm" 
                     : "bg-surface-hover border border-border/50 text-foreground rounded-bl-sm"
                 }`}>
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  {msg.role === "tutor" ? (
+                    <TutorRichText content={msg.content} className="text-foreground" />
+                  ) : (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  )}
                 </div>
                 {msg.role === "user" && (
                   <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center shrink-0">
