@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { BookOpen, Clock, RefreshCw } from "lucide-react";
+import { backendUrl } from "@/utils/backend";
 
-const API_BASE = "http://localhost:8000/api/reading";
+const API_BASE = backendUrl("/api/reading");
 
 type Question = {
   id: string;

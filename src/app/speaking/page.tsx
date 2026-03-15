@@ -3,8 +3,9 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Mic, Clock } from "lucide-react";
+import { backendUrl } from "@/utils/backend";
 
-const API_BASE = "http://localhost:8000/api/speaking";
+const API_BASE = backendUrl("/api/speaking");
 
 type Message = {
   role: "examiner" | "candidate";
@@ -103,7 +104,7 @@ export default function SpeakingPage() {
     if (audioRef.current) {
       audioRef.current.pause();
     }
-    const audio = new Audio(`http://localhost:8000${audioUrl}`);
+    const audio = new Audio(backendUrl(audioUrl));
     audioRef.current = audio;
     setIsExaminerSpeaking(true);
     

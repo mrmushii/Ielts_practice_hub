@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { PenTool, Upload, Loader2, Clock, Send, Sparkles, User, Bot, Paperclip, Mic, ZoomIn, ZoomOut, X } from "lucide-react";
 import TutorRichText from "@/components/TutorRichText";
+import { backendUrl } from "@/utils/backend";
 
-const API_BASE = "http://localhost:8000/api/writing";
+const API_BASE = backendUrl("/api/writing");
 
 type Prompt = {
   id: string;
@@ -85,8 +86,8 @@ export default function WritingPage() {
         formData.append('audio', audioBlob, 'recording.webm');
 
         try {
-          const res = await fetch('http://localhost:8000/api/tutor/transcribe', {
-            method: 'POST',
+          const res = await fetch(backendUrl("/api/tutor/transcribe"), {
+            method: "POST",
             body: formData
           });
           const data = await res.json();
@@ -240,7 +241,7 @@ export default function WritingPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch("http://localhost:8000/api/documents/upload", {
+      const res = await fetch(backendUrl("/api/documents/upload"), {
         method: "POST",
         body: formData,
       });
@@ -269,7 +270,7 @@ export default function WritingPage() {
     setIsChatLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/api/tutor/chat", {
+      const res = await fetch(backendUrl("/api/tutor/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import TutorRichText from "@/components/TutorRichText";
+import { backendUrl } from "@/utils/backend";
 
 type TutorMessage = { role: "user" | "tutor"; content: string };
 
@@ -80,7 +81,7 @@ export default function TutorPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/api/tutor/chat", {
+      const res = await fetch(backendUrl("/api/tutor/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -122,7 +123,7 @@ export default function TutorPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch("http://localhost:8000/api/documents/upload", {
+      const res = await fetch(backendUrl("/api/documents/upload"), {
         method: "POST",
         body: formData,
       });
@@ -173,7 +174,7 @@ export default function TutorPage() {
         formData.append("audio", audioBlob, "recording.webm");
 
         try {
-          const res = await fetch("http://localhost:8000/api/tutor/transcribe", {
+          const res = await fetch(backendUrl("/api/tutor/transcribe"), {
             method: "POST",
             body: formData,
           });

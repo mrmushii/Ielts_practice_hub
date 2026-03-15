@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Headphones, SkipBack, Play, Pause, Clock } from "lucide-react";
+import { backendUrl } from "@/utils/backend";
 
-const API_BASE = "http://localhost:8000/api/listening";
+const API_BASE = backendUrl("/api/listening");
 
 type Question = {
   id: string;
@@ -110,12 +111,12 @@ export default function ListeningPage() {
     if (audioRef.current) {
       // audio_url from backend looks like "/api/core/audio/<filename>"
       // which matches our AUDIO_BASE if we construct it properly or just use the full hostname
-      const fullUrl = `http://localhost:8000${line.audio_url}`;
+      const fullUrl = backendUrl(line.audio_url);
       audioRef.current.src = fullUrl;
       
       const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
-        playPromise.catch(error => console.error("Audio playback error:", error));
+        playPromise.catch((error) => console.error("Audio playback error:", error));
       }
     }
   };

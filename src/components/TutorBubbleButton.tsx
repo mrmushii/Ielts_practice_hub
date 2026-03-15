@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { MessageSquare, Send, Loader2, X, Bot, User, Expand } from "lucide-react";
 import { usePathname } from "next/navigation";
 import TutorRichText from "@/components/TutorRichText";
+import { backendUrl } from "@/utils/backend";
 
 type TutorMessage = { role: "user" | "tutor"; content: string };
 
@@ -52,7 +53,7 @@ export default function TutorBubbleButton() {
     setIsLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/api/tutor/chat", {
+      const res = await fetch(backendUrl("/api/tutor/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
