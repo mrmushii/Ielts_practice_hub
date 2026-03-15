@@ -1,10 +1,11 @@
 export type TutorAction = {
   id: string;
-  type: "navigate_module" | "open_tutor_workspace";
+  type: "navigate_module" | "open_tutor_workspace" | "start_module_flow";
   module: string;
   route: string;
   label: string;
   description: string;
+  start_action?: string;
   requires_confirmation: boolean;
 };
 

@@ -73,10 +73,13 @@ export default function TutorPage() {
       if (!allowed) return;
     }
 
-    const safeRoute = ["/speaking", "/listening", "/reading", "/writing", "/tutor"].includes(action.route)
-      ? action.route
+    const normalizedRoute = action.route.startsWith("/") ? action.route : "/tutor";
+    const [path, query] = normalizedRoute.split("?", 2);
+    const safePath = ["/", "/speaking", "/listening", "/reading", "/writing", "/tutor"].includes(path)
+      ? path
       : "/tutor";
-    router.push(buildTutorRoute(safeRoute, sessionId));
+    const routeWithQuery = query ? `${safePath}?${query}` : safePath;
+    router.push(buildTutorRoute(routeWithQuery, sessionId));
   };
 
   const handleBack = () => {
@@ -306,6 +309,18 @@ export default function TutorPage() {
                   >
                     {item.icon}
                     {item.label}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {["/speaking", "/listening", "/reading", "/writing", "/tutor"].map((cmd) => (
+                  <button
+                    key={cmd}
+                    onClick={() => setInput(cmd)}
+                    className="rounded-md border border-border bg-background px-2.5 py-1 text-[11px] text-text-muted hover:text-foreground hover:bg-surface-hover transition-colors cursor-pointer"
+                    title={`Insert command ${cmd}`}
+                  >
+                    {cmd}
                   </button>
                 ))}
               </div>

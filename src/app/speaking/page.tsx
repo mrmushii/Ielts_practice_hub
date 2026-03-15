@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Mic, Clock } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { backendUrl } from "@/utils/backend";
 
 const API_BASE = backendUrl("/api/speaking");
@@ -23,6 +24,7 @@ enum CallStatus {
 }
 
 export default function SpeakingPage() {
+  const searchParams = useSearchParams();
   const [testState, setTestState] = useState<TestState>("idle");
   const [sessionId, setSessionId] = useState("");
   const [currentPart, setCurrentPart] = useState(1);
@@ -56,6 +58,7 @@ export default function SpeakingPage() {
   const animationFrameRef = useRef<number | null>(null);
   const hasDetectedSpeechRef = useRef(false);
   const startRecordingRef = useRef<(() => Promise<void>) | null>(null);
+  const autoStartedFromTutorRef = useRef(false);
 
   const cleanupAudioResources = useCallback(() => {
     if (animationFrameRef.current) {
@@ -151,6 +154,15 @@ export default function SpeakingPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const shouldAutoStart = searchParams.get("tutor_start") === "1";
+    if (!shouldAutoStart || autoStartedFromTutorRef.current) return;
+    if (testState !== "idle" || isLoading) return;
+
+    autoStartedFromTutorRef.current = true;
+    void startTest();
+  }, [searchParams, testState, isLoading]);
 
   // Send text response
   const sendTextResponse = useCallback(async () => {

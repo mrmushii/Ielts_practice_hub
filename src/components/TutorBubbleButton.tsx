@@ -51,10 +51,14 @@ export default function TutorBubbleButton() {
       if (!allowed) return;
     }
 
-    const safeRoute = ["/speaking", "/listening", "/reading", "/writing", "/tutor"].includes(action.route)
-      ? action.route
+    const normalizedRoute = action.route.startsWith("/") ? action.route : "/tutor";
+    const [path, query] = normalizedRoute.split("?", 2);
+    const safePath = ["/", "/speaking", "/listening", "/reading", "/writing", "/tutor"].includes(path)
+      ? path
       : "/tutor";
-    router.push(buildTutorRoute(safeRoute, sessionId));
+    const routeWithQuery = query ? `${safePath}?${query}` : safePath;
+
+    router.push(buildTutorRoute(routeWithQuery, sessionId));
     setIsOpen(false);
   };
 
@@ -149,6 +153,18 @@ export default function TutorBubbleButton() {
                   >
                     {item.icon}
                     {item.label}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {["/speaking", "/listening", "/reading", "/writing"].map((cmd) => (
+                  <button
+                    key={cmd}
+                    onClick={() => setInput(cmd)}
+                    className="rounded-md border border-border px-2 py-0.5 text-[10px] text-text-muted hover:text-foreground hover:bg-background/70 transition-colors cursor-pointer"
+                    title={`Use command ${cmd}`}
+                  >
+                    {cmd}
                   </button>
                 ))}
               </div>
