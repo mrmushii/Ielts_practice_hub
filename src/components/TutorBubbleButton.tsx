@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import TutorRichText from "@/components/TutorRichText";
 import { backendUrl } from "@/utils/backend";
 import { buildTutorRoute, TutorAction, TutorChatResponse } from "@/utils/tutor-actions";
+import { toast } from "sonner";
 
 type TutorMessage = { role: "user" | "tutor"; content: string; actions?: TutorAction[] };
 
@@ -46,20 +47,34 @@ export default function TutorBubbleButton() {
   }, [messages, isOpen]);
 
   const executeAction = (action: TutorAction) => {
-    if (action.requires_confirmation) {
-      const allowed = window.confirm(`Open ${action.module} now?`);
-      if (!allowed) return;
+    const navigate = () => {
+      const normalizedRoute = action.route.startsWith("/") ? action.route : "/tutor";
+      const [path, query] = normalizedRoute.split("?", 2);
+      const safePath = ["/", "/speaking", "/listening", "/reading", "/writing", "/tutor"].includes(path)
+        ? path
+        : "/tutor";
+      const routeWithQuery = query ? `${safePath}?${query}` : safePath;
+
+      router.push(buildTutorRoute(routeWithQuery, sessionId));
+      setIsOpen(false);
+    };
+
+    if (!action.requires_confirmation) {
+      navigate();
+      return;
     }
 
-    const normalizedRoute = action.route.startsWith("/") ? action.route : "/tutor";
-    const [path, query] = normalizedRoute.split("?", 2);
-    const safePath = ["/", "/speaking", "/listening", "/reading", "/writing", "/tutor"].includes(path)
-      ? path
-      : "/tutor";
-    const routeWithQuery = query ? `${safePath}?${query}` : safePath;
-
-    router.push(buildTutorRoute(routeWithQuery, sessionId));
-    setIsOpen(false);
+    toast(`Open ${action.module}?`, {
+      description: action.description,
+      action: {
+        label: "Open",
+        onClick: navigate,
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
   };
 
   const sendMessage = async (e?: React.FormEvent) => {
