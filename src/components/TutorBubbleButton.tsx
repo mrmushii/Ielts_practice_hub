@@ -15,6 +15,9 @@ export default function TutorBubbleButton() {
   const router = useRouter();
   const pathname = usePathname();
   const hideOnTutorPage = pathname === "/tutor";
+  const isWritingPage = pathname === "/writing";
+  const launcherPositionClass = isWritingPage ? "bottom-24 right-6" : "bottom-6 right-6";
+  const popupPositionClass = isWritingPage ? "bottom-40 right-6" : "bottom-24 right-6";
   const [isOpen, setIsOpen] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [messages, setMessages] = useState<TutorMessage[]>([
@@ -123,7 +126,7 @@ export default function TutorBubbleButton() {
   return (
     <>
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-90 max-w-[calc(100vw-24px)] h-140 max-h-[calc(100vh-120px)] animate-slide-up-fade">
+        <div className={`fixed ${popupPositionClass} z-50 w-90 max-w-[calc(100vw-24px)] h-140 max-h-[calc(100vh-120px)] animate-slide-up-fade`}>
           <div className="h-full rounded-2xl border border-white/15 bg-surface/85 backdrop-blur-xl shadow-2xl shadow-black/40 overflow-hidden flex flex-col">
             <div className="px-4 py-3 border-b border-border bg-surface/70 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -253,7 +256,7 @@ export default function TutorBubbleButton() {
 
       <button
         onClick={() => setIsOpen((prev) => !prev)}
-        className="fixed bottom-6 right-6 z-50 group animate-pop-in"
+        className={`fixed ${launcherPositionClass} z-50 group animate-pop-in`}
         aria-label="Open AI Tutor"
         title="Open AI Tutor"
       >
