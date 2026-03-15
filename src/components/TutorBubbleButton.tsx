@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { MessageSquare, Send, Loader2, X, Bot, User, Expand } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { MessageSquare, Send, Loader2, X, Bot, User, Expand, Headphones, Mic, BookOpen, PenTool } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import TutorRichText from "@/components/TutorRichText";
 import { backendUrl } from "@/utils/backend";
+import { buildTutorRoute, TutorAction, TutorChatResponse } from "@/utils/tutor-actions";
 
-type TutorMessage = { role: "user" | "tutor"; content: string };
+type TutorMessage = { role: "user" | "tutor"; content: string; actions?: TutorAction[] };
 
 export default function TutorBubbleButton() {
+  const router = useRouter();
   const pathname = usePathname();
   const hideOnTutorPage = pathname === "/tutor";
   const [isOpen, setIsOpen] = useState(false);
@@ -43,6 +45,19 @@ export default function TutorBubbleButton() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isOpen]);
 
+  const executeAction = (action: TutorAction) => {
+    if (action.requires_confirmation) {
+      const allowed = window.confirm(`Open ${action.module} now?`);
+      if (!allowed) return;
+    }
+
+    const safeRoute = ["/speaking", "/listening", "/reading", "/writing", "/tutor"].includes(action.route)
+      ? action.route
+      : "/tutor";
+    router.push(buildTutorRoute(safeRoute, sessionId));
+    setIsOpen(false);
+  };
+
   const sendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -51,6 +66,7 @@ export default function TutorBubbleButton() {
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setIsLoading(true);
+    const messageHistory = messages.map((msg) => ({ role: msg.role, content: msg.content }));
 
     try {
       const res = await fetch(backendUrl("/api/tutor/chat"), {
@@ -58,14 +74,21 @@ export default function TutorBubbleButton() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
-          history: messages,
+          history: messageHistory,
           session_id: sessionId,
         }),
       });
 
       if (!res.ok) throw new Error("Tutor API failed");
-      const data = await res.json();
-      setMessages((prev) => [...prev, { role: "tutor", content: data.response }]);
+      const data: TutorChatResponse = await res.json();
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "tutor",
+          content: data.response,
+          actions: data.actions || [],
+        },
+      ]);
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -89,8 +112,8 @@ export default function TutorBubbleButton() {
                   <Bot className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold">AI Tutor</p>
-                  <p className="text-[11px] text-text-muted">Live assistant</p>
+                  <p className="text-sm font-semibold">AI Control Tutor</p>
+                  <p className="text-[11px] text-text-muted">One stop for every IELTS task</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -111,6 +134,26 @@ export default function TutorBubbleButton() {
               </div>
             </div>
 
+            <div className="px-3 py-2 border-b border-border bg-surface/40">
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: "Speaking", route: "/speaking", icon: <Mic className="w-3.5 h-3.5" /> },
+                  { label: "Listening", route: "/listening", icon: <Headphones className="w-3.5 h-3.5" /> },
+                  { label: "Reading", route: "/reading", icon: <BookOpen className="w-3.5 h-3.5" /> },
+                  { label: "Writing", route: "/writing", icon: <PenTool className="w-3.5 h-3.5" /> },
+                ].map((item) => (
+                  <button
+                    key={item.route}
+                    onClick={() => router.push(buildTutorRoute(item.route, sessionId))}
+                    className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background/60 px-2 py-1.5 text-[11px] text-foreground hover:bg-surface-hover transition-colors cursor-pointer"
+                  >
+                    {item.icon}
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="flex-1 overflow-y-auto p-3 space-y-3">
               {messages.map((msg, idx) => (
                 <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -123,6 +166,21 @@ export default function TutorBubbleButton() {
                       <TutorRichText content={msg.content} className="text-foreground" />
                     ) : (
                       <p className="whitespace-pre-wrap">{msg.content}</p>
+                    )}
+
+                    {msg.role === "tutor" && msg.actions && msg.actions.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {msg.actions.map((action) => (
+                          <button
+                            key={action.id}
+                            onClick={() => executeAction(action)}
+                            className="rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-[11px] text-accent-light hover:bg-accent/20 transition-colors cursor-pointer"
+                            title={action.description}
+                          >
+                            {action.label}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>

@@ -5,20 +5,24 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  BookOpen,
   Bot,
+  Headphones,
   Layout,
   Loader2,
   MessageSquare,
   Mic,
   Paperclip,
+  PenTool,
   Send,
   User,
   X,
 } from "lucide-react";
 import TutorRichText from "@/components/TutorRichText";
 import { backendUrl } from "@/utils/backend";
+import { buildTutorRoute, TutorAction, TutorChatResponse } from "@/utils/tutor-actions";
 
-type TutorMessage = { role: "user" | "tutor"; content: string };
+type TutorMessage = { role: "user" | "tutor"; content: string; actions?: TutorAction[] };
 
 export default function TutorPage() {
   const router = useRouter();
@@ -63,6 +67,18 @@ export default function TutorPage() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  const executeAction = (action: TutorAction) => {
+    if (action.requires_confirmation) {
+      const allowed = window.confirm(`Open ${action.module} now?`);
+      if (!allowed) return;
+    }
+
+    const safeRoute = ["/speaking", "/listening", "/reading", "/writing", "/tutor"].includes(action.route)
+      ? action.route
+      : "/tutor";
+    router.push(buildTutorRoute(safeRoute, sessionId));
+  };
+
   const handleBack = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
@@ -79,6 +95,7 @@ export default function TutorPage() {
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setIsLoading(true);
+    const messageHistory = messages.map((msg) => ({ role: msg.role, content: msg.content }));
 
     try {
       const res = await fetch(backendUrl("/api/tutor/chat"), {
@@ -86,14 +103,21 @@ export default function TutorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
-          history: messages,
+          history: messageHistory,
           session_id: sessionId,
         }),
       });
 
       if (!res.ok) throw new Error("Tutor API failed");
-      const data = await res.json();
-      setMessages((prev) => [...prev, { role: "tutor", content: data.response }]);
+      const data: TutorChatResponse = await res.json();
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "tutor",
+          content: data.response,
+          actions: data.actions || [],
+        },
+      ]);
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -223,8 +247,8 @@ export default function TutorPage() {
             </div>
 
             <div className="min-w-0">
-              <h1 className="truncate text-base font-semibold sm:text-lg">AI Tutor Workspace</h1>
-              <p className="truncate text-xs text-text-muted">Stable chat, live grounding, PDF support, and voice input</p>
+              <h1 className="truncate text-base font-semibold sm:text-lg">AI Tutor Control Center</h1>
+              <p className="truncate text-xs text-text-muted">One stop command center for all IELTS modules</p>
             </div>
           </div>
 
@@ -241,6 +265,24 @@ export default function TutorPage() {
             >
               Writing
             </Link>
+            <Link
+              href={buildTutorRoute("/speaking", sessionId)}
+              className="rounded-full border border-border bg-surface px-4 py-2 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            >
+              Speaking
+            </Link>
+            <Link
+              href={buildTutorRoute("/listening", sessionId)}
+              className="rounded-full border border-border bg-surface px-4 py-2 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            >
+              Listening
+            </Link>
+            <Link
+              href={buildTutorRoute("/reading", sessionId)}
+              className="rounded-full border border-border bg-surface px-4 py-2 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            >
+              Reading
+            </Link>
           </div>
         </div>
       </header>
@@ -249,7 +291,24 @@ export default function TutorPage() {
         <div className="grid min-h-[calc(100dvh-110px)] grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
           <section className="glass-card flex min-h-[70dvh] flex-col overflow-hidden xl:min-h-0">
             <div className="border-b border-border bg-surface/60 px-4 py-3 sm:px-5">
-              <p className="text-sm text-text-muted">Ask detailed IELTS questions and open good tutor responses in Canvas.</p>
+              <p className="text-sm text-text-muted">Ask anything, then launch modules directly from tutor actions or quick controls.</p>
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {[
+                  { label: "Speaking", route: "/speaking", icon: <Mic className="h-3.5 w-3.5" /> },
+                  { label: "Listening", route: "/listening", icon: <Headphones className="h-3.5 w-3.5" /> },
+                  { label: "Reading", route: "/reading", icon: <BookOpen className="h-3.5 w-3.5" /> },
+                  { label: "Writing", route: "/writing", icon: <PenTool className="h-3.5 w-3.5" /> },
+                ].map((item) => (
+                  <button
+                    key={item.route}
+                    onClick={() => router.push(buildTutorRoute(item.route, sessionId))}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-surface-hover cursor-pointer"
+                  >
+                    {item.icon}
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="flex-1 space-y-4 overflow-y-auto bg-surface/10 p-4 sm:p-5">
@@ -276,6 +335,21 @@ export default function TutorPage() {
                           <TutorRichText content={msg.content} className="text-foreground" />
                         ) : (
                           <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                        )}
+
+                        {msg.role === "tutor" && msg.actions && msg.actions.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {msg.actions.map((action) => (
+                              <button
+                                key={action.id}
+                                onClick={() => executeAction(action)}
+                                className="rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent-light transition-colors hover:bg-accent/20 cursor-pointer"
+                                title={action.description}
+                              >
+                                {action.label}
+                              </button>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>
