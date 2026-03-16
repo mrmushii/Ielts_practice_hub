@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#f8fafc"/>
+  <text x="36" y="44" font-family="Arial" font-size="24" fill="#111827">University Campus Road Network: Current vs Future Plan</text>
+  <rect x="70" y="90" width="390" height="390" fill="#fff" stroke="#334155" stroke-width="2"/>
+  <rect x="500" y="90" width="390" height="390" fill="#fff" stroke="#334155" stroke-width="2"/>
+  <text x="205" y="120" font-family="Arial" font-size="16" fill="#111827">Current</text>
+  <text x="640" y="120" font-family="Arial" font-size="16" fill="#111827">Future</text>
+  <line x1="100" y1="260" x2="430" y2="260" stroke="#ef4444" stroke-width="10"/>
+  <line x1="260" y1="120" x2="260" y2="450" stroke="#ef4444" stroke-width="10"/>
+  <rect x="130" y="145" width="90" height="70" fill="#93c5fd"/><text x="155" y="185" font-family="Arial" font-size="12" fill="#1e3a8a">Library</text>
+  <rect x="300" y="300" width="110" height="90" fill="#bbf7d0"/><text x="330" y="350" font-family="Arial" font-size="12" fill="#166534">Sports</text>
+  <line x1="530" y1="260" x2="860" y2="260" stroke="#ef4444" stroke-width="10"/>
+  <line x1="690" y1="120" x2="690" y2="450" stroke="#ef4444" stroke-width="10"/>
+  <line x1="530" y1="330" x2="860" y2="330" stroke="#f97316" stroke-width="8"/>
+  <rect x="560" y="145" width="95" height="70" fill="#93c5fd"/><text x="585" y="185" font-family="Arial" font-size="12" fill="#1e3a8a">Library</text>
+  <rect x="730" y="145" width="115" height="70" fill="#fde68a"/><text x="760" y="185" font-family="Arial" font-size="12" fill="#854d0e">Labs</text>
+  <rect x="730" y="355" width="120" height="80" fill="#bbf7d0"/><text x="760" y="398" font-family="Arial" font-size="12" fill="#166534">Sports</text>
+</svg>

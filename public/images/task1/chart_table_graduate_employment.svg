@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#fff"/>
+  <text x="36" y="44" font-family="Arial" font-size="24" fill="#111827">Graduate Employment Within 6 Months (%)</text>
+  <rect x="90" y="90" width="780" height="380" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+  <line x1="90" y1="150" x2="870" y2="150" stroke="#334155" stroke-width="2"/>
+  <line x1="290" y1="90" x2="290" y2="470" stroke="#cbd5e1"/>
+  <line x1="430" y1="90" x2="430" y2="470" stroke="#cbd5e1"/>
+  <line x1="570" y1="90" x2="570" y2="470" stroke="#cbd5e1"/>
+  <line x1="710" y1="90" x2="710" y2="470" stroke="#cbd5e1"/>
+  <g font-family="Arial" font-size="15" fill="#111827">
+    <text x="130" y="130">Subject</text><text x="340" y="130">2021</text><text x="480" y="130">2022</text><text x="620" y="130">2023</text><text x="760" y="130">2024</text>
+    <text x="130" y="210">Engineering</text><text x="345" y="210">78</text><text x="485" y="210">81</text><text x="625" y="210">84</text><text x="765" y="210">86</text>
+    <text x="130" y="265">Business</text><text x="345" y="265">72</text><text x="485" y="265">74</text><text x="625" y="265">77</text><text x="765" y="265">79</text>
+    <text x="130" y="320">IT</text><text x="345" y="320">69</text><text x="485" y="320">73</text><text x="625" y="320">80</text><text x="765" y="320">83</text>
+    <text x="130" y="375">Arts</text><text x="345" y="375">61</text><text x="485" y="375">63</text><text x="625" y="375">66</text><text x="765" y="375">68</text>
+    <text x="130" y="430">Sciences</text><text x="345" y="430">74</text><text x="485" y="430">76</text><text x="625" y="430">79</text><text x="765" y="430">82</text>
+  </g>
+</svg>

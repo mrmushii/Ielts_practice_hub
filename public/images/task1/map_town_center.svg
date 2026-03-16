@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#f8fafc"/>
+  <text x="40" y="50" font-family="Arial" font-size="24" fill="#0f172a">Town Center: 2000 vs Present (Map)</text>
+  <rect x="100" y="90" width="340" height="380" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+  <rect x="520" y="90" width="340" height="380" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+  <text x="240" y="120" font-family="Arial" font-size="16" fill="#334155">2000</text>
+  <text x="650" y="120" font-family="Arial" font-size="16" fill="#334155">Present</text>
+  <rect x="140" y="170" width="120" height="70" fill="#bfdbfe"/><text x="155" y="210" font-family="Arial" font-size="13" fill="#1e3a8a">Library</text>
+  <rect x="290" y="170" width="110" height="70" fill="#fde68a"/><text x="308" y="210" font-family="Arial" font-size="13" fill="#92400e">Shops</text>
+  <rect x="180" y="285" width="180" height="90" fill="#bbf7d0"/><text x="235" y="335" font-family="Arial" font-size="13" fill="#166534">Park</text>
+  <rect x="560" y="160" width="130" height="80" fill="#bfdbfe"/><text x="585" y="205" font-family="Arial" font-size="13" fill="#1e3a8a">Library</text>
+  <rect x="710" y="160" width="110" height="80" fill="#fca5a5"/><text x="732" y="205" font-family="Arial" font-size="13" fill="#7f1d1d">Cafe</text>
+  <rect x="560" y="270" width="260" height="120" fill="#bbf7d0"/><text x="665" y="335" font-family="Arial" font-size="13" fill="#166534">Expanded Park</text>
+</svg>

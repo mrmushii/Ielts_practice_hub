@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#ffffff"/>
+  <text x="40" y="50" font-family="Arial" font-size="24" fill="#0f172a">University Budget Distribution (2005 vs 2025)</text>
+  <circle cx="280" cy="290" r="140" fill="#e2e8f0"/>
+  <path d="M280 290 L280 150 A140 140 0 0 1 392 356 Z" fill="#2563eb"/>
+  <path d="M280 290 L392 356 A140 140 0 0 1 184 394 Z" fill="#16a34a"/>
+  <path d="M280 290 L184 394 A140 140 0 0 1 280 150 Z" fill="#f59e0b"/>
+  <circle cx="680" cy="290" r="140" fill="#e2e8f0"/>
+  <path d="M680 290 L680 150 A140 140 0 0 1 796 320 Z" fill="#2563eb"/>
+  <path d="M680 290 L796 320 A140 140 0 0 1 580 410 Z" fill="#16a34a"/>
+  <path d="M680 290 L580 410 A140 140 0 0 1 680 150 Z" fill="#f59e0b"/>
+  <text x="235" y="465" font-family="Arial" font-size="16" fill="#334155">2005</text>
+  <text x="635" y="465" font-family="Arial" font-size="16" fill="#334155">2025</text>
+</svg>

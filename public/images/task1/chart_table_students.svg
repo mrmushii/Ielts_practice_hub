@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#ffffff"/>
+  <text x="40" y="50" font-family="Arial" font-size="24" fill="#0f172a">International Students by Faculty (2018-2023)</text>
+  <rect x="120" y="110" width="720" height="340" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+  <line x1="120" y1="170" x2="840" y2="170" stroke="#334155" stroke-width="2"/>
+  <line x1="280" y1="110" x2="280" y2="450" stroke="#cbd5e1"/>
+  <line x1="430" y1="110" x2="430" y2="450" stroke="#cbd5e1"/>
+  <line x1="580" y1="110" x2="580" y2="450" stroke="#cbd5e1"/>
+  <line x1="710" y1="110" x2="710" y2="450" stroke="#cbd5e1"/>
+  <text x="150" y="150" font-family="Arial" font-size="16" fill="#0f172a">Faculty</text>
+  <text x="320" y="150" font-family="Arial" font-size="16" fill="#0f172a">2018</text>
+  <text x="470" y="150" font-family="Arial" font-size="16" fill="#0f172a">2020</text>
+  <text x="620" y="150" font-family="Arial" font-size="16" fill="#0f172a">2023</text>
+  <text x="150" y="220" font-family="Arial" font-size="15" fill="#334155">Engineering</text><text x="330" y="220" font-family="Arial" font-size="15" fill="#334155">320</text><text x="480" y="220" font-family="Arial" font-size="15" fill="#334155">410</text><text x="630" y="220" font-family="Arial" font-size="15" fill="#334155">520</text>
+  <text x="150" y="275" font-family="Arial" font-size="15" fill="#334155">Business</text><text x="330" y="275" font-family="Arial" font-size="15" fill="#334155">290</text><text x="480" y="275" font-family="Arial" font-size="15" fill="#334155">360</text><text x="630" y="275" font-family="Arial" font-size="15" fill="#334155">430</text>
+  <text x="150" y="330" font-family="Arial" font-size="15" fill="#334155">IT</text><text x="330" y="330" font-family="Arial" font-size="15" fill="#334155">180</text><text x="480" y="330" font-family="Arial" font-size="15" fill="#334155">260</text><text x="630" y="330" font-family="Arial" font-size="15" fill="#334155">390</text>
+  <text x="150" y="385" font-family="Arial" font-size="15" fill="#334155">Arts</text><text x="330" y="385" font-family="Arial" font-size="15" fill="#334155">150</text><text x="480" y="385" font-family="Arial" font-size="15" fill="#334155">170</text><text x="630" y="385" font-family="Arial" font-size="15" fill="#334155">210</text>
+</svg>

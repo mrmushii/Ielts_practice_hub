@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#fff"/>
+  <text x="36" y="44" font-family="Arial" font-size="24" fill="#111827">Average House Prices in Three Cities (2008-2023)</text>
+  <line x1="90" y1="470" x2="900" y2="470" stroke="#374151" stroke-width="2"/>
+  <line x1="90" y1="120" x2="90" y2="470" stroke="#374151" stroke-width="2"/>
+  <polyline fill="none" stroke="#16a34a" stroke-width="4" points="120,380 190,360 260,335 330,310 400,300 470,285 540,270 610,250 680,230 750,210 820,190 890,175"/>
+  <polyline fill="none" stroke="#2563eb" stroke-width="4" points="120,350 190,345 260,330 330,320 400,340 470,360 540,350 610,330 680,310 750,290 820,270 890,260"/>
+  <polyline fill="none" stroke="#dc2626" stroke-width="4" points="120,300 190,290 260,300 330,315 400,335 470,350 540,340 610,320 680,295 750,275 820,255 890,240"/>
+  <g font-family="Arial" font-size="12" fill="#374151">
+    <text x="120" y="495">2008</text><text x="250" y="495">2011</text><text x="380" y="495">2014</text><text x="510" y="495">2017</text><text x="640" y="495">2020</text><text x="770" y="495">2023</text>
+  </g>
+  <text x="760" y="130" font-family="Arial" font-size="13" fill="#16a34a">City A</text>
+  <text x="760" y="152" font-family="Arial" font-size="13" fill="#2563eb">City B</text>
+  <text x="760" y="174" font-family="Arial" font-size="13" fill="#dc2626">City C</text>
+</svg>
