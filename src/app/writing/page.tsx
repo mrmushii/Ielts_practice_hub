@@ -30,6 +30,28 @@ type ChatMessage = {
   content: string;
 };
 
+const TASK1_FALLBACK_IMAGES = [
+  "/images/task1/chart_bar_energy.svg",
+  "/images/task1/chart_line_rainfall.svg",
+  "/images/task1/chart_pie_budget.svg",
+  "/images/task1/chart_table_students.svg",
+  "/images/task1/map_town_center.svg",
+  "/images/task1/chart_bar_library_visitors.svg",
+  "/images/task1/chart_line_house_prices.svg",
+  "/images/task1/chart_table_graduate_employment.svg",
+  "/images/task1/map_airport_redevelopment.svg",
+  "/images/task1/map_campus_expansion.svg",
+  "/images/task1_map.png",
+  "/images/task1_pie_chart.png",
+];
+
+function withTask1ImageFallback(task1Prompts: Prompt[]): Prompt[] {
+  return task1Prompts.map((prompt, idx) => ({
+    ...prompt,
+    image_url: prompt.image_url?.trim() || TASK1_FALLBACK_IMAGES[idx % TASK1_FALLBACK_IMAGES.length],
+  }));
+}
+
 export default function WritingPage() {
   const [taskType, setTaskType] = useState<1 | 2>(2);
   const [prompts, setPrompts] = useState<{ task1: Prompt[]; task2: Prompt[] }>({ task1: [], task2: [] });
@@ -119,8 +141,12 @@ export default function WritingPage() {
     fetch(`${API_BASE}/prompts`)
       .then((res) => res.json())
       .then((data) => {
-        setPrompts(data);
-        setSelectedPrompt(data.task2[0]);
+        const normalized = {
+          task1: withTask1ImageFallback(data.task1 ?? []),
+          task2: data.task2 ?? [],
+        };
+        setPrompts(normalized);
+        setSelectedPrompt(normalized.task2[0] ?? normalized.task1[0] ?? null);
       });
   }, []);
 
@@ -137,7 +163,8 @@ export default function WritingPage() {
 
   const handleTaskSwitch = (type: 1 | 2) => {
     setTaskType(type);
-    setSelectedPrompt(type === 1 ? prompts.task1[0] : prompts.task2[0]);
+    const nextList = type === 1 ? prompts.task1 : prompts.task2;
+    setSelectedPrompt(nextList[0] ?? null);
     setTimeLeft(type === 1 ? 20 * 60 : 40 * 60);
     setTimerActive(true);
     setEssayText("");
