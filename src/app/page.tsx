@@ -82,9 +82,11 @@ export default function Home() {
           <Link href="/speaking" className="px-8 py-3.5 rounded-full bg-accent text-white font-semibold text-base hover:bg-accent-light transition-all duration-300 shadow-lg shadow-accent/25 hover:shadow-accent/40 hover:scale-105">
             Start Practicing
           </Link>
+          <Link href={'https://github.com/mrmushii'} target="_blank">
           <button className="px-8 py-3.5 rounded-full bg-surface border border-border text-foreground font-medium text-base hover:bg-surface-hover transition-all duration-300 cursor-pointer">
             View on GitHub
           </button>
+          </Link>
         </div>
       </main>
 
