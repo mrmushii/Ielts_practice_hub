@@ -1,16 +1,30 @@
 const defaultBackendUrl = "http://localhost:8000";
 
 function normalizeBackendBaseUrl(rawValue?: string): string {
-  const trimmed = rawValue?.trim();
+  const trimmed = rawValue?.trim().replace(/^['\"]|['\"]$/g, "");
   if (!trimmed) return defaultBackendUrl;
 
-  // If protocol is missing (for example: my-api.up.railway.app),
-  // default to HTTPS for production hosting platforms.
-  if (!/^https?:\/\//i.test(trimmed)) {
-    return `https://${trimmed}`;
+  // Accept host-only values and normalize accidental leading slashes.
+  // Example malformed values handled here:
+  // - ieltspracticehubbackend-production.up.railway.app
+  // - /ieltspracticehubbackend-production.up.railway.app
+  let candidate = trimmed;
+  if (/^\/+/.test(candidate) && !/^https?:\/\//i.test(candidate)) {
+    candidate = candidate.replace(/^\/+/, "");
   }
 
-  return trimmed;
+  // If protocol is missing, default to HTTPS for cloud deployments.
+  if (!/^https?:\/\//i.test(candidate)) {
+    candidate = `https://${candidate}`;
+  }
+
+  try {
+    const parsed = new URL(candidate);
+    if (!parsed.hostname) return defaultBackendUrl;
+    return parsed.origin;
+  } catch {
+    return defaultBackendUrl;
+  }
 }
 
 const configuredBackendUrl = normalizeBackendBaseUrl(
