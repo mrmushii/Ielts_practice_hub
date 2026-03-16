@@ -3,7 +3,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Mic, Clock } from "lucide-react";
-import { useSearchParams } from "next/navigation";
 import { backendUrl } from "@/utils/backend";
 
 const API_BASE = backendUrl("/api/speaking");
@@ -24,7 +23,6 @@ enum CallStatus {
 }
 
 export default function SpeakingPage() {
-  const searchParams = useSearchParams();
   const [testState, setTestState] = useState<TestState>("idle");
   const [sessionId, setSessionId] = useState("");
   const [currentPart, setCurrentPart] = useState(1);
@@ -148,13 +146,15 @@ export default function SpeakingPage() {
   };
 
   useEffect(() => {
-    const shouldAutoStart = searchParams.get("tutor_start") === "1";
+    const shouldAutoStart =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("tutor_start") === "1";
     if (!shouldAutoStart || autoStartedFromTutorRef.current) return;
     if (testState !== "idle" || isLoading) return;
 
     autoStartedFromTutorRef.current = true;
     void startTest();
-  }, [searchParams, testState, isLoading]);
+  }, [testState, isLoading]);
 
   // Send text response
   const sendTextResponse = useCallback(async () => {

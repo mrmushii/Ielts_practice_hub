@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Headphones, SkipBack, Play, Pause, Clock } from "lucide-react";
-import { useSearchParams } from "next/navigation";
 import { backendUrl } from "@/utils/backend";
 
 const API_BASE = backendUrl("/api/listening");
@@ -43,7 +42,6 @@ const LISTENING_TOPICS = [
 ];
 
 export default function ListeningPage() {
-  const searchParams = useSearchParams();
   const [testData, setTestData] = useState<TestData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const autoStartedFromTutorRef = useRef(false);
@@ -89,13 +87,15 @@ export default function ListeningPage() {
   };
 
   useEffect(() => {
-    const shouldAutoStart = searchParams.get("tutor_start") === "1";
+    const shouldAutoStart =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("tutor_start") === "1";
     if (!shouldAutoStart || autoStartedFromTutorRef.current) return;
     if (isGenerating) return;
 
     autoStartedFromTutorRef.current = true;
     void generateTest();
-  }, [searchParams, isGenerating]);
+  }, [isGenerating]);
 
   useEffect(() => {
     if (!testData || showResults || timeLeft <= 0) return;
